@@ -1,6 +1,5 @@
 # SCLocalizationUA
 [![Latest Release Version](https://img.shields.io/github/release/Vova-Bob/SCLoc_App?sort=date&label=Версія)](https://github.com/Vova-Bob/SCLoc_App/releases/latest)
-[![Latest Release Downloads](https://img.shields.io/github/downloads/Vova-Bob/SCLoc_App/latest/total?label=Завантажено%20останніх%20версій)](https://github.com/Vova-Bob/SCLoc_App/releases/latest)
 [![Total Downloads](https://img.shields.io/github/downloads/Vova-Bob/SCLoc_App/total.svg?label=Завантажено)](https://github.com/Vova-Bob/SCLoc_App/releases)
 [![Crowdin](https://badges.crowdin.net/star-citizen-localization-ua/localized.svg)](https://crowdin.com/project/star-citizen-localization-ua)
 
