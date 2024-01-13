@@ -1,2 +1,2 @@
-# SCLoc_App
+# SCLocalizationUA
 Додаток для локалізації Star Citizen
