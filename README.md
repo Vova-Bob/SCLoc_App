@@ -1,7 +1,7 @@
 # SCLocalizationUA
-Додаток для локалізації гри Star Citizen Українською
+Додаток для Української локалізації гри Star Citizen Українською
 
-Підтримка локалізації гри зроблена учасниками [UKRAINIAN SPACE FLEET](https://robertsspaceindustries.com/orgs/UKR)
+Підтримка Української локалізації гри зроблена учасниками [UKRAINIAN SPACE FLEET](https://robertsspaceindustries.com/orgs/UKR)
 
 Повідомити про помилку в перекладі або приєднатись до проєкту можна через наш [Discord](https://discord.gg/TkaN6Yv4VT)
 
