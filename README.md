@@ -1,4 +1,8 @@
 # SCLocalizationUA
+![GitHub release (latest by date)](https://img.shields.io/github/v/release/Vova-Bob/SCLoc_App?style=flat-square)
+![GitHub all releases](https://img.shields.io/github/downloads/Vova-Bob/SCLoc_App/total?style=flat-square)
+[![Crowdin](https://badges.crowdin.net/star-citizen-localization-ua/localized.svg)](https://crowdin.com/project/star-citizen-localization-ua)
+
 Додаток для локалізації гри Star Citizen Українською
 
 Підтримка Української локалізації гри зроблена учасниками [UKRAINIAN SPACE FLEET](https://robertsspaceindustries.com/orgs/UKR)
