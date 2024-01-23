@@ -10,6 +10,9 @@
 *.userosscache
 *.sln.docstates
 
+# Включити папку "bin/Release" та її вміст
+!/bin/Release/
+
 # User-specific files (MonoDevelop/Xamarin Studio)
 *.userprefs
 
