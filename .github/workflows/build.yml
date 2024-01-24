@@ -21,7 +21,7 @@ jobs:
       uses: microsoft/setup-msbuild@v1.0.2
 
     - name: Download NuGet dependencies
-      run: dotnet restore SCLocApp/SCLocApp.csproj
+      run: dotnet restore SCLocApp.csproj
 
     - name: Build solution
       run: msbuild SCLocApp/SCLocApp.csproj /p:Configuration=Release
