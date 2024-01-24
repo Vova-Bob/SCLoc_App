@@ -23,8 +23,15 @@ jobs:
     - name: Download NuGet dependencies
       run: dotnet restore SCLOCUA.csproj
 
-    - name: Build
-      run: msbuild SCLOCUA.csproj /p:Configuration=Release
+    - name: Build and Publish
+      run: |
+        msbuild SCLOCUA.csproj /p:Configuration=Release /p:Version=${{ github.event.inputs.version }}
+        dotnet publish SCLOCUA.csproj -c Release -o publish --self-contained true /p:PublishProfile=FolderProfile.pubxml
+
+    - name: Create zip package
+      shell: pwsh
+      run: |
+        Compress-Archive -Path ./publish/* -DestinationPath ./SCLOCUA.zip
 
     - name: Create Release
       id: create_release
