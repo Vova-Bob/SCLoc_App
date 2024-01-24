@@ -15,13 +15,14 @@ jobs:
     - name: Checkout
       uses: actions/checkout@v2
       with:
-        ref: master 
+        fetch-depth: 0
 
     - name: Setup MSBuild.exe
       uses: microsoft/setup-msbuild@v1.0.2
 
     - name: Download NuGet dependencies
-      run: dotnet restore SCLocApp.csproj
+      run: dotnet restore SCLOCUA.csproj
 
     - name: Build solution
-      run: msbuild SCLocApp.csproj /p:Configuration=Release
+      run: msbuild SCLOCUA.csproj /p:Configuration=Release
+
