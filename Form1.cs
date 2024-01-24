@@ -3,7 +3,6 @@ using System.IO;
 using System.Net.Http;
 using System.Threading.Tasks;
 using System.Windows.Forms;
-using System.Configuration;
 using System.Text.RegularExpressions;
 
 namespace SCLOCUA
@@ -14,17 +13,15 @@ namespace SCLOCUA
         private static readonly HttpClient httpClient = new HttpClient();
         private Timer autoUpdateTimer = new Timer();
         private string selectedFolderPath = "";
+
         public Form1()
         {
             InitializeComponent();
             InitializeEvents();
             InitializeTimer();
             InitializeUI();
-            if (!string.IsNullOrWhiteSpace(Properties.Settings.Default.LastSelectedFolderPath) && Directory.Exists(Properties.Settings.Default.LastSelectedFolderPath))
-            {
-                selectedFolderPath = Properties.Settings.Default.LastSelectedFolderPath;
-            }
 
+            selectedFolderPath = Properties.Settings.Default.LastSelectedFolderPath;
             UpdateLabel();
         }
 
@@ -48,8 +45,7 @@ namespace SCLOCUA
             this.Icon = Properties.Resources.Icon;
             UpdateLabel();
 
-            // Додайте перевірку наявності вибраного шляху та активуйте кнопку за необхідності
-            if (!string.IsNullOrWhiteSpace(selectedFolderPath))
+            if (!string.IsNullOrWhiteSpace(selectedFolderPath) && Directory.Exists(selectedFolderPath))
             {
                 toolStripStatusLabel1.Text = "Перейдіть до встановлення локалізації";
                 button2.Enabled = true;
@@ -70,7 +66,6 @@ namespace SCLOCUA
                     toolStripStatusLabel1.Text = "Перейдіть до встановлення локалізації";
                     button2.Enabled = true;
 
-                    // Зберігаємо нове значення в налаштуваннях
                     Properties.Settings.Default.LastSelectedFolderPath = selectedFolderPath;
                     Properties.Settings.Default.Save();
                 }
@@ -87,34 +82,29 @@ namespace SCLOCUA
 
                 try
                 {
-                    bool userCfgExists = File.Exists(Path.Combine(Properties.Settings.Default.LastSelectedFolderPath, "user.cfg"));
-                    bool globalIniExists = File.Exists(Path.Combine(Properties.Settings.Default.LastSelectedFolderPath, "Data/Localization/korean_(south_korea)/global.ini"));
+                    bool userCfgExists = File.Exists(Path.Combine(selectedFolderPath, "user.cfg"));
+                    bool globalIniExists = File.Exists(Path.Combine(selectedFolderPath, "Data/Localization/korean_(south_korea)/global.ini"));
 
                     if (checkBox1.Checked)
                     {
-                        CopyFile("user.cfg", Path.Combine(Properties.Settings.Default.LastSelectedFolderPath, "user.cfg"));
+                        CopyFile("user.cfg", Path.Combine(selectedFolderPath, "user.cfg"));
                         toolStripProgressBar1.Value++;
                     }
 
                     string githubGistUrl = "https://raw.githubusercontent.com/Vova-Bob/SC_localization_UA/main/Data/Localization/korean_(south_korea)/global.ini";
-                    string localFilePath = Path.Combine(Properties.Settings.Default.LastSelectedFolderPath, "Data/Localization/korean_(south_korea)/global.ini");
+                    string localFilePath = Path.Combine(selectedFolderPath, "Data/Localization/korean_(south_korea)/global.ini");
 
-                    // Отримуємо вміст файлу з Github gist
                     await DownloadFileAsync(githubGistUrl, localFilePath);
                     toolStripProgressBar1.Value++;
 
-                    // Тепер можна продовжити обробку отриманого вмісту
                     string gistContent = File.ReadAllText(localFilePath);
 
-                    // Ваш код для виявлення URL вмісту Github gist і подальшої обробки
                     if (DetectGithubGistUrl(gistContent))
                     {
-                        // Вміст містить URL до Github gist, можна обробити якщо потрібно
                         toolStripStatusLabel1.Text = "Знайдено URL до Github gist";
                     }
                     else
                     {
-                        // Вміст не містить URL до Github gist, продовжуйте з використанням локалізації
                         toolStripStatusLabel1.Text = userCfgExists || globalIniExists ? "Локалізацію оновлено" : "Локалізацію встановлено";
                     }
 
@@ -131,20 +121,12 @@ namespace SCLOCUA
             }
         }
 
-
-
         private bool DetectGithubGistUrl(string content)
         {
-            // Регулярний вираз для пошуку URL Github gist
             string regexPattern = @"https://gist.github.com/\w+/\w+";
-
-            // Пошук у вмісті за допомогою регулярного виразу
             Match match = Regex.Match(content, regexPattern);
-
-            // Перевірка наявності знайденого URL
             return match.Success;
         }
-
 
         private void CopyFile(string sourcePath, string destinationPath)
         {
@@ -153,7 +135,6 @@ namespace SCLOCUA
 
         private async Task DownloadFileAsync(string url, string filePath)
         {
-            HttpClient httpClient = new HttpClient();
             try
             {
                 byte[] fileData = await httpClient.GetByteArrayAsync(url);
@@ -183,22 +164,22 @@ namespace SCLOCUA
 
         private async void button3_Click(object sender, EventArgs e)
         {
-            if (!string.IsNullOrWhiteSpace(Properties.Settings.Default.LastSelectedFolderPath))
+            if (!string.IsNullOrWhiteSpace(selectedFolderPath))
             {
                 try
                 {
-                    bool userCfgExists = File.Exists(Path.Combine(Properties.Settings.Default.LastSelectedFolderPath, "user.cfg"));
-                    bool globalIniExists = File.Exists(Path.Combine(Properties.Settings.Default.LastSelectedFolderPath, "Data/Localization/korean_(south_korea)/global.ini"));
+                    bool userCfgExists = File.Exists(Path.Combine(selectedFolderPath, "user.cfg"));
+                    bool globalIniExists = File.Exists(Path.Combine(selectedFolderPath, "Data/Localization/korean_(south_korea)/global.ini"));
 
                     if (userCfgExists || globalIniExists)
                     {
                         if (userCfgExists)
                         {
-                            File.Delete(Path.Combine(Properties.Settings.Default.LastSelectedFolderPath, "user.cfg"));
+                            File.Delete(Path.Combine(selectedFolderPath, "user.cfg"));
                         }
                         if (globalIniExists)
                         {
-                            File.Delete(Path.Combine(Properties.Settings.Default.LastSelectedFolderPath, "Data/Localization/korean_(south_korea)/global.ini"));
+                            File.Delete(Path.Combine(selectedFolderPath, "Data/Localization/korean_(south_korea)/global.ini"));
                         }
 
                         int initialValue = toolStripProgressBar1.Value;
@@ -210,7 +191,6 @@ namespace SCLOCUA
                         }
 
                         toolStripStatusLabel1.Text = "Файли видалено";
-
                         button2.Enabled = true;
                     }
                     else
