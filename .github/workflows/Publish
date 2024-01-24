@@ -31,7 +31,7 @@ jobs:
     - name: Create zip package
       shell: pwsh
       run: |
-        Compress-Archive -Path ./publish/* -DestinationPath ./SCLocalizationUA.zip
+        Compress-Archive -Path ./publish/* -DestinationPath ./SCLOCUA.zip
 
     - name: Create Release
       id: create_release
@@ -51,6 +51,6 @@ jobs:
         GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
       with:
         upload_url: ${{ steps.create_release.outputs.upload_url }}
-        asset_path: ./SCLocalizationUA.zip
-        asset_name: SCLocalizationUA.zip
-        asset_content_type: application/zip
+        asset_path: ./SCLOCUA.zip
+        asset_name: SCLOCUA.zip
+        asset_content_type: SCLOCUA/zip
