@@ -1,52 +1,27 @@
-name: Build and Release
+name: Build
 
 on:
   push:
-    branches:
-      - master
-
+    branches: [master]
+  pull_request:
+    branches: [master]
   workflow_dispatch:
-    inputs:
-      release:
-        description: 'Запустити реліз'
-        required: true
 
 jobs:
   build:
     runs-on: windows-latest
-
-    steps:
-    - name: Checkout code
-      uses: actions/checkout@v2
-
-    - name: Setup .NET Framework
-      run: |
-        choco install dotnetfx --version 4.8.1 -y
-        dotnet --list-sdks
-        dotnet --list-runtimes
-        dotnet --version
-
-    - name: Install Visual Studio Build Tools
-      run: |
-        choco install visualstudio2019buildtools --package-parameters "--add Microsoft.VisualStudio.Workload.MSBuildTools --add Microsoft.VisualStudio.Workload.NetCoreBuildTools" -y
-        choco install visualstudio2019-workload-vctools -y
-        refreshenv
-
-    - name: Build
-      run: msbuild /p:Configuration=Release
-
-    - name: Create Release
-      id: create_release
-      uses: softprops/action-gh-release@v1
-      with:
-        files: |
-          bin/Release/*.exe
-        token: ${{ secrets.GH_TOKEN }}
-
-    - name: Create Tag
-      if: success()
-      run: git tag -a v${{ github.run_number }} -m "Release v${{ github.run_number }}"
     
-    - name: Push Tag
-      if: success()
-      run: git push origin v${{ github.run_number }}
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v2
+      with:
+        fetch-depth: 0
+
+    - name: Setup MSBuild.exe
+      uses: microsoft/setup-msbuild@v1.0.2
+
+    - name: Download NuGet dependencies
+      run: dotnet restore SCLocApp/SCLocApp.csproj
+
+    - name: Build solution
+      run: msbuild SCLocApp/SCLocApp.csproj /p:Configuration=Release
