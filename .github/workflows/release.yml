@@ -21,10 +21,17 @@ jobs:
 
     - name: Setup .NET Framework
       run: |
-        choco install dotnetfx --version 4.8.1 -y # Встановлюємо .NET Framework 4.8
-        dotnet --list-sdks # Перевіряємо, що версія 4.8 встановлена
-        dotnet --list-runtimes # Перевіряємо, що версія 4.8 встановлена
-        dotnet --version # Перевіряємо версію .NET
+        choco install dotnetfx --version 4.8.1 -y
+        dotnet --list-sdks
+        dotnet --list-runtimes
+        dotnet --version
+
+    - name: Setup MSBuild
+      run: |
+        # Додаємо шлях до MSBuild до змінної PATH
+        echo 'D:\Program Files (x86)\Microsoft Visual Studio\2019\BuildTools\MSBuild\Current\Bin' >> $GITHUB_PATH
+        # Перевіряємо, що msbuild доступний
+        msbuild --version
 
     - name: Build
       run: msbuild /p:Configuration=Release
