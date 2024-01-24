@@ -26,3 +26,11 @@ jobs:
     - name: Build solution
       run: msbuild SCLOCUA.csproj /p:Configuration=Release
 
+    - name: Publish Release Artifact
+      run: |
+        mkdir -p release
+        cp -r bin/Release/* release/
+        zip -r SCLOCUA.zip release/
+      if: success()
+
+
