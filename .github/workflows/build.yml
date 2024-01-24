@@ -25,6 +25,9 @@ jobs:
 
     - name: Build solution
       run: msbuild SCLOCUA.csproj /p:Configuration=Release
+      
+    - name: Create release directory
+      run: mkdir -p release
 
     - name: Publish Release Artifact
       run: |
