@@ -26,12 +26,11 @@ jobs:
         dotnet --list-runtimes
         dotnet --version
 
-    - name: Setup MSBuild
+    - name: Install Visual Studio Build Tools
       run: |
-        # Додаємо шлях до MSBuild до змінної PATH
-        echo 'D:\Program Files (x86)\Microsoft Visual Studio\2019\BuildTools\MSBuild\Current\Bin' >> $GITHUB_PATH
-        # Перевіряємо, що msbuild доступний
-        msbuild --version
+        choco install visualstudio2019buildtools --package-parameters "--add Microsoft.VisualStudio.Workload.MSBuildTools --add Microsoft.VisualStudio.Workload.NetCoreBuildTools" -y
+        choco install visualstudio2019-workload-vctools -y
+        refreshenv
 
     - name: Build
       run: msbuild /p:Configuration=Release
