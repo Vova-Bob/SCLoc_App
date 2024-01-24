@@ -10,49 +10,59 @@ namespace SCLOCUA
     public partial class Form1 : Form
     {
         private int autoUpdateInterval = 1;
-        private static readonly HttpClient httpClient = new HttpClient();
-        private Timer autoUpdateTimer = new Timer();
+        private const string UserCfgFileName = "user.cfg";
+        private const string GlobalIniFileName = "global.ini";
+        private const string GithubGistUrlPattern = @"https://gist.github.com/\w+/\w+";
+
+        private readonly HttpClient httpClient = new HttpClient();
+        private readonly Timer autoUpdateTimer = new Timer();
         private string selectedFolderPath = "";
 
         public Form1()
         {
             InitializeComponent();
+            InitializeUI();
             InitializeEvents();
             InitializeTimer();
-            InitializeUI();
-
-            selectedFolderPath = Properties.Settings.Default.LastSelectedFolderPath;
-            UpdateLabel();
-        }
-
-        private void InitializeEvents()
-        {
-            button1.Click += button1_Click;
-            checkBox2.CheckedChanged += checkBox2_CheckedChanged;
-            comboBox1.SelectedIndexChanged += comboBox1_SelectedIndexChanged;
-        }
-
-        private void InitializeTimer()
-        {
-            autoUpdateTimer.Interval = autoUpdateInterval * 60 * 1000;
-            autoUpdateTimer.Tick += autoUpdateTimer_Tick;
-            autoUpdateTimer.Start();
         }
 
         private void InitializeUI()
         {
             this.MaximizeBox = false;
             this.Icon = Properties.Resources.Icon;
+            selectedFolderPath = Properties.Settings.Default.LastSelectedFolderPath;
             UpdateLabel();
+            button2.Enabled = !string.IsNullOrWhiteSpace(selectedFolderPath) && Directory.Exists(selectedFolderPath);
 
-            if (!string.IsNullOrWhiteSpace(selectedFolderPath) && Directory.Exists(selectedFolderPath))
-            {
-                toolStripStatusLabel1.Text = "Перейдіть до встановлення локалізації";
-                button2.Enabled = true;
-            }
+            // Перевірка наявності файлів user.cfg і global.ini
+            bool userCfgExists = File.Exists(Path.Combine(selectedFolderPath, UserCfgFileName));
+            bool globalIniExists = File.Exists(Path.Combine(selectedFolderPath, $"Data/Localization/korean_(south_korea)/{GlobalIniFileName}"));
+
+            // Зміна назви кнопки в залежності від наявності файлів
+            button2.Text = userCfgExists || globalIniExists ? "Оновити локалізацію" : "Встановити локалізацію";
         }
 
-        private void button1_Click(object sender, EventArgs e)
+        private void InitializeEvents()
+        {
+            button1.Click += SelectFolderButtonClick;
+            checkBox2.CheckedChanged += AutoUpdateCheckBoxChanged;
+            comboBox1.SelectedIndexChanged += AutoUpdateIntervalChanged;
+            button2.Click += UpdateLocalizationButtonClick;
+            button3.Click += DeleteFilesButtonClick;
+            linkLabel1.LinkClicked += OpenLinkLabel1;
+            linkLabel2.LinkClicked += OpenLinkLabel2;
+            linkLabel3.LinkClicked += OpenLinkLabel3;
+            pictureBox1.Click += OpenPictureBoxLink;
+        }
+
+        private void InitializeTimer()
+        {
+            autoUpdateTimer.Interval = autoUpdateInterval * 60 * 1000;
+            autoUpdateTimer.Tick += AutoUpdateTimerTick;
+            autoUpdateTimer.Start();
+        }
+
+        private void SelectFolderButtonClick(object sender, EventArgs e)
         {
             using (FolderBrowserDialog folderDialog = new FolderBrowserDialog())
             {
@@ -63,6 +73,13 @@ namespace SCLOCUA
                 {
                     selectedFolderPath = folderDialog.SelectedPath;
                     UpdateLabel();
+
+                    // Перевірка наявності файлу user.cfg
+                    bool userCfgExists = File.Exists(Path.Combine(selectedFolderPath, UserCfgFileName));
+
+                    // Оновлення стану чекбоксу checkBox1
+                    checkBox1.Checked = !userCfgExists;
+
                     toolStripStatusLabel1.Text = "Перейдіть до встановлення локалізації";
                     button2.Enabled = true;
 
@@ -72,65 +89,72 @@ namespace SCLOCUA
             }
         }
 
-        private async void button2_Click(object sender, EventArgs e)
+        private async void UpdateLocalizationButtonClick(object sender, EventArgs e)
         {
-            if (!string.IsNullOrWhiteSpace(selectedFolderPath))
+            if (string.IsNullOrWhiteSpace(selectedFolderPath))
+                return;
+
+            toolStripProgressBar1.Maximum = checkBox1.Checked ? 2 : 1;
+            toolStripProgressBar1.Value = 0;
+            button2.Enabled = false;
+
+            try
             {
-                toolStripProgressBar1.Maximum = checkBox1.Checked ? 2 : 1;
-                toolStripProgressBar1.Value = 0;
-                button2.Enabled = false;
+                bool userCfgExists = File.Exists(Path.Combine(selectedFolderPath, UserCfgFileName));
+                bool globalIniExists = File.Exists(Path.Combine(selectedFolderPath, $"Data/Localization/korean_(south_korea)/{GlobalIniFileName}"));
 
-                try
+                if (!userCfgExists && checkBox1.Checked)
                 {
-                    bool userCfgExists = File.Exists(Path.Combine(selectedFolderPath, "user.cfg"));
-                    bool globalIniExists = File.Exists(Path.Combine(selectedFolderPath, "Data/Localization/korean_(south_korea)/global.ini"));
-
-                    if (checkBox1.Checked)
-                    {
-                        CopyFile("user.cfg", Path.Combine(selectedFolderPath, "user.cfg"));
-                        toolStripProgressBar1.Value++;
-                    }
-
-                    string githubGistUrl = "https://raw.githubusercontent.com/Vova-Bob/SC_localization_UA/main/Data/Localization/korean_(south_korea)/global.ini";
-                    string localFilePath = Path.Combine(selectedFolderPath, "Data/Localization/korean_(south_korea)/global.ini");
-
-                    await DownloadFileAsync(githubGistUrl, localFilePath);
+                    // Копіювати файл user.cfg, якщо він не існує і чекбокс встановлений
+                    CopyFile(UserCfgFileName, Path.Combine(selectedFolderPath, UserCfgFileName));
                     toolStripProgressBar1.Value++;
 
-                    string gistContent = File.ReadAllText(localFilePath);
+                    // Зняти галочку з чекбоксу після встановлення файлу
+                    checkBox1.Checked = false;
+                }
 
-                    if (DetectGithubGistUrl(gistContent))
-                    {
-                        toolStripStatusLabel1.Text = "Знайдено URL до Github gist";
-                    }
-                    else
-                    {
-                        toolStripStatusLabel1.Text = userCfgExists || globalIniExists ? "Локалізацію оновлено" : "Локалізацію встановлено";
-                    }
+                string githubGistUrl = "https://raw.githubusercontent.com/Vova-Bob/SC_localization_UA/main/Data/Localization/korean_(south_korea)/global.ini";
+                string localFilePath = Path.Combine(selectedFolderPath, $"Data/Localization/korean_(south_korea)/{GlobalIniFileName}");
 
-                    autoUpdateTimer.Start();
-                }
-                catch (Exception ex)
+                await DownloadFileAsync(githubGistUrl, localFilePath);
+                toolStripProgressBar1.Value++;
+
+                string gistContent = File.ReadAllText(localFilePath);
+
+                if (DetectGithubGistUrl(gistContent))
                 {
-                    ShowErrorMessage($"Помилка при завантаженні/оновленні файлів: {ex.Message}");
+                    toolStripStatusLabel1.Text = "Знайдено URL до Github gist";
                 }
-                finally
+                else
                 {
-                    button2.Enabled = true;
+                    // Зміна назви кнопки на "Оновити локалізацію" після встановлення
+                    button2.Text = "Оновити локалізацію";
+
+                    toolStripStatusLabel1.Text = userCfgExists || globalIniExists ? "Локалізацію оновлено" : "Локалізацію встановлено";
                 }
+
+                autoUpdateTimer.Start();
+            }
+            catch (Exception ex)
+            {
+                ShowErrorMessage($"Помилка при завантаженні/оновленні файлів: {ex.Message}");
+            }
+            finally
+            {
+                button2.Enabled = true;
             }
         }
 
         private bool DetectGithubGistUrl(string content)
         {
-            string regexPattern = @"https://gist.github.com/\w+/\w+";
+            string regexPattern = GithubGistUrlPattern;
             Match match = Regex.Match(content, regexPattern);
             return match.Success;
         }
 
-        private void CopyFile(string sourcePath, string destinationPath)
+        private void CopyFile(string sourceFileName, string destinationPath)
         {
-            File.Copy(sourcePath, destinationPath, true);
+            File.Copy(sourceFileName, destinationPath, true);
         }
 
         private async Task DownloadFileAsync(string url, string filePath)
@@ -145,7 +169,12 @@ namespace SCLOCUA
                     Directory.CreateDirectory(directoryPath);
                 }
 
-                await Task.Run(() => File.WriteAllBytes(filePath, fileData));
+                await Task.Run(() =>
+                {
+                    File.WriteAllBytes(filePath, fileData);
+                });
+
+
             }
             catch (HttpRequestException ex)
             {
@@ -157,65 +186,61 @@ namespace SCLOCUA
             }
         }
 
-        private void UpdateLabel()
+        private void DeleteFilesButtonClick(object sender, EventArgs e)
         {
-            label1.Text = selectedFolderPath;
-        }
+            if (string.IsNullOrWhiteSpace(selectedFolderPath))
+                return;
 
-        private async void button3_Click(object sender, EventArgs e)
-        {
-            if (!string.IsNullOrWhiteSpace(selectedFolderPath))
+            try
             {
-                try
+                bool userCfgExists = File.Exists(Path.Combine(selectedFolderPath, UserCfgFileName));
+                bool globalIniExists = File.Exists(Path.Combine(selectedFolderPath, $"Data/Localization/korean_(south_korea)/{GlobalIniFileName}"));
+
+                if (userCfgExists || globalIniExists)
                 {
-                    bool userCfgExists = File.Exists(Path.Combine(selectedFolderPath, "user.cfg"));
-                    bool globalIniExists = File.Exists(Path.Combine(selectedFolderPath, "Data/Localization/korean_(south_korea)/global.ini"));
-
-                    if (userCfgExists || globalIniExists)
+                    if (userCfgExists)
                     {
-                        if (userCfgExists)
-                        {
-                            File.Delete(Path.Combine(selectedFolderPath, "user.cfg"));
-                        }
-                        if (globalIniExists)
-                        {
-                            File.Delete(Path.Combine(selectedFolderPath, "Data/Localization/korean_(south_korea)/global.ini"));
-                        }
-
-                        int initialValue = toolStripProgressBar1.Value;
-
-                        for (int i = initialValue; i >= 0; i--)
-                        {
-                            toolStripProgressBar1.Value = i;
-                            await Task.Delay(50);
-                        }
-
-                        toolStripStatusLabel1.Text = "Файли видалено";
-                        button2.Enabled = true;
+                        File.Delete(Path.Combine(selectedFolderPath, UserCfgFileName));
                     }
-                    else
+                    if (globalIniExists)
                     {
-                        toolStripStatusLabel1.Text = "Файли вже видалені або відсутні";
+                        File.Delete(Path.Combine(selectedFolderPath, $"Data/Localization/korean_(south_korea)/{GlobalIniFileName}"));
                     }
+
+                    int initialValue = toolStripProgressBar1.Value;
+
+                    for (int i = initialValue; i >= 0; i--)
+                    {
+                        toolStripProgressBar1.Value = i;
+                    }
+
+                    toolStripStatusLabel1.Text = "Файли видалено";
+
+                    // Зміна назви кнопки на "Встановити локалізацію" після видалення
+                    button2.Text = "Встановити локалізацію";
+
+                    // Встановити галочку знову після видалення файлів
+                    checkBox1.Checked = true;
+
+                    button2.Enabled = true;
                 }
-                catch (Exception ex)
+                else
                 {
-                    ShowErrorMessage($"Помилка при видаленні файлів: {ex.Message}");
+                    toolStripStatusLabel1.Text = "Файли вже видалені або відсутні";
                 }
+            }
+            catch (Exception ex)
+            {
+                ShowErrorMessage($"Помилка при видаленні файлів: {ex.Message}");
             }
         }
 
-        private void ShowErrorMessage(string message)
-        {
-            MessageBox.Show(message, "Помилка", MessageBoxButtons.OK, MessageBoxIcon.Error);
-        }
-
-        private void checkBox2_CheckedChanged(object sender, EventArgs e)
+        private void AutoUpdateCheckBoxChanged(object sender, EventArgs e)
         {
             autoUpdateTimer.Interval = checkBox2.Checked ? autoUpdateInterval * 60 * 1000 : int.MaxValue;
         }
 
-        private void comboBox1_SelectedIndexChanged(object sender, EventArgs e)
+        private void AutoUpdateIntervalChanged(object sender, EventArgs e)
         {
             autoUpdateInterval = Convert.ToInt32(comboBox1.SelectedItem);
 
@@ -225,32 +250,56 @@ namespace SCLOCUA
             }
         }
 
-        private void autoUpdateTimer_Tick(object sender, EventArgs e)
+        private void AutoUpdateTimerTick(object sender, EventArgs e)
         {
             if (checkBox2.Checked)
             {
-                button2_Click(sender, e);
+                UpdateLocalizationButtonClick(sender, e);
             }
         }
 
-        private void linkLabel1_LinkClicked(object sender, LinkLabelLinkClickedEventArgs e)
+        private void UpdateLabel()
+        {
+            label1.Text = selectedFolderPath;
+        }
+
+        private void ShowErrorMessage(string message)
+        {
+            MessageBox.Show(message, "Помилка", MessageBoxButtons.OK, MessageBoxIcon.Error);
+        }
+
+        private void OpenLinkLabel1(object sender, LinkLabelLinkClickedEventArgs e)
         {
             OpenLink("https://crowdin.com/project/star-citizen-localization-ua/invite?h=5459dc1e3bc7eb2319809d529deea2a11952526");
         }
 
-        private void linkLabel2_LinkClicked(object sender, LinkLabelLinkClickedEventArgs e)
+        private void OpenLinkLabel2(object sender, LinkLabelLinkClickedEventArgs e)
         {
             OpenLink("https://discord.gg/QVV2G2aKzf");
         }
 
-        private void linkLabel3_LinkClicked(object sender, LinkLabelLinkClickedEventArgs e)
+        private void OpenLinkLabel3(object sender, LinkLabelLinkClickedEventArgs e)
         {
             OpenLink("https://github.com/Vova-Bob/SC_localization_UA");
+        }
+
+        private void OpenPictureBoxLink(object sender, EventArgs e)
+        {
+            OpenLink("https://usf.42web.io");
         }
 
         private void OpenLink(string url)
         {
             System.Diagnostics.Process.Start(url);
+        }
+
+        private void Form1_Load(object sender, EventArgs e)
+        {
+            if (!string.IsNullOrWhiteSpace(selectedFolderPath))
+            {
+                bool userCfgExists = File.Exists(Path.Combine(selectedFolderPath, UserCfgFileName));
+                checkBox1.Checked = !userCfgExists;
+            }
         }
     }
 }

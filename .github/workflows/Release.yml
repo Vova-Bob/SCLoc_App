@@ -20,7 +20,11 @@ jobs:
     - name: Setup .NET SDK
       uses: actions/setup-dotnet@v1
       with:
-        dotnet-version: 6.0.x # Замініть на потрібну версію .NET SDK
+        dotnet-version: 6.0.x 
+        
+    - name: Install Newtonsoft.Json
+      run: dotnet add package Newtonsoft.Json --version 13.0.0
+
 
     - name: Download NuGet dependencies
       run: dotnet restore SCLOCUA.csproj
