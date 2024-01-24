@@ -28,7 +28,5 @@ jobs:
 
     - name: Publish Release Artifact
       run: |
-        mkdir -p release
-        cp -r bin/Release/* release/
-        Compress-Archive -Path release/* -DestinationPath SCLOCUA.zip
+        Compress-Archive -Path bin/Release/* -DestinationPath SCLOCUA.zip
       if: success()
