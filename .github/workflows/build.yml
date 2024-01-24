@@ -30,7 +30,5 @@ jobs:
       run: |
         mkdir -p release
         cp -r bin/Release/* release/
-        zip -r SCLOCUA.zip release/
+        Compress-Archive -Path release/* -DestinationPath SCLOCUA.zip
       if: success()
-
-
