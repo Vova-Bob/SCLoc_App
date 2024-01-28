@@ -6,6 +6,8 @@
 
 Підтримка Української локалізації гри зроблена учасниками [UKRAINIAN SPACE FLEET](https://robertsspaceindustries.com/orgs/UKR)
 
+[Посилання на переклад](https://github.com/Vova-Bob/SC_localization_UA)
+
 Повідомити про помилку в перекладі або приєднатись до проєкту можна через наш [Discord](https://discord.gg/TkaN6Yv4VT)
 
 ### Важливо:
