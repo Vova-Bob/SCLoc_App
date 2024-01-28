@@ -1,6 +1,8 @@
 # SCLocalizationUA
 [![Latest Release Version](https://img.shields.io/github/release/Vova-Bob/SCLoc_App?sort=date&label=Версія)](https://github.com/Vova-Bob/SCLoc_App/releases/latest)
 [![Crowdin](https://badges.crowdin.net/star-citizen-localization-ua/localized.svg)](https://crowdin.com/project/star-citizen-localization-ua)
+[![Endpoint Badge](https://img.shields.io/endpoint?url=https%3A%2F%2Fhits.dwyl.com%2FVova-Bob%2FSCLoc_App.json&style=flat&label=%D0%97%D0%B0%D0%B2%D0%B0%D0%BD%D1%82%D0%B0%D0%B6%D0%B5%D0%BD%D1%8C&labelColor=%2321252b&color=red)](https://github.com/Vova-Bob/SCLoc_App/releases/latest)
+
 
 Додаток для локалізації гри Star Citizen Українською
 
