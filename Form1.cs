@@ -21,6 +21,10 @@ namespace SCLOCUA
         public Form1()
         {
             InitializeComponent();
+            this.MaximizeBox = false;
+            this.Icon = Properties.Resources.Icon;
+            selectedFolderPath = Properties.Settings.Default.LastSelectedFolderPath;
+
             InitializeUI();
             InitializeEvents();
             InitializeTimer();
@@ -28,18 +32,18 @@ namespace SCLOCUA
 
         private void InitializeUI()
         {
-            this.MaximizeBox = false;
-            this.Icon = Properties.Resources.Icon;
-            selectedFolderPath = Properties.Settings.Default.LastSelectedFolderPath;
-            UpdateLabel();
-            button2.Enabled = !string.IsNullOrWhiteSpace(selectedFolderPath) && Directory.Exists(selectedFolderPath);
+            label1.Text = "Виберіть шлях до папки StarCitizen/LIVE";
+            button2.Text = "Встановити локалізацію";
+            button2.Enabled = false; 
 
-            // Перевірка наявності файлів user.cfg і global.ini
-            bool userCfgExists = File.Exists(Path.Combine(selectedFolderPath, UserCfgFileName));
-            bool globalIniExists = File.Exists(Path.Combine(selectedFolderPath, $"Data/Localization/korean_(south_korea)/{GlobalIniFileName}"));
-
-            // Зміна назви кнопки в залежності від наявності файлів
-            button2.Text = userCfgExists || globalIniExists ? "Оновити локалізацію" : "Встановити локалізацію";
+            if (!string.IsNullOrWhiteSpace(selectedFolderPath) && Directory.Exists(selectedFolderPath))
+            {
+                UpdateLabel();
+                button2.Enabled = true;
+                bool userCfgExists = File.Exists(Path.Combine(selectedFolderPath, UserCfgFileName));
+                bool globalIniExists = File.Exists(Path.Combine(selectedFolderPath, $"Data/Localization/korean_(south_korea)/{GlobalIniFileName}"));
+                button2.Text = userCfgExists || globalIniExists ? "Оновити локалізацію" : "Встановити локалізацію";
+            }
         }
 
         private void InitializeEvents()
@@ -73,11 +77,7 @@ namespace SCLOCUA
                 {
                     selectedFolderPath = folderDialog.SelectedPath;
                     UpdateLabel();
-
-                    // Перевірка наявності файлу user.cfg
                     bool userCfgExists = File.Exists(Path.Combine(selectedFolderPath, UserCfgFileName));
-
-                    // Оновлення стану чекбоксу checkBox1
                     checkBox1.Checked = !userCfgExists;
 
                     toolStripStatusLabel1.Text = "Перейдіть до встановлення локалізації";
@@ -105,11 +105,8 @@ namespace SCLOCUA
 
                 if (!userCfgExists && checkBox1.Checked)
                 {
-                    // Копіювати файл user.cfg, якщо він не існує і чекбокс встановлений
                     CopyFile(UserCfgFileName, Path.Combine(selectedFolderPath, UserCfgFileName));
                     toolStripProgressBar1.Value++;
-
-                    // Зняти галочку з чекбоксу після встановлення файлу
                     checkBox1.Checked = false;
                 }
 
@@ -127,7 +124,6 @@ namespace SCLOCUA
                 }
                 else
                 {
-                    // Зміна назви кнопки на "Оновити локалізацію" після встановлення
                     button2.Text = "Оновити локалізацію";
 
                     toolStripStatusLabel1.Text = userCfgExists || globalIniExists ? "Локалізацію оновлено" : "Локалізацію встановлено";
@@ -174,7 +170,6 @@ namespace SCLOCUA
                     File.WriteAllBytes(filePath, fileData);
                 });
 
-
             }
             catch (HttpRequestException ex)
             {
@@ -214,14 +209,9 @@ namespace SCLOCUA
                         toolStripProgressBar1.Value = i;
                     }
 
-                    toolStripStatusLabel1.Text = "Файли видалено";
-
-                    // Зміна назви кнопки на "Встановити локалізацію" після видалення
+                    toolStripStatusLabel1.Text = "Файли видалено";                 
                     button2.Text = "Встановити локалізацію";
-
-                    // Встановити галочку знову після видалення файлів
                     checkBox1.Checked = true;
-
                     button2.Enabled = true;
                 }
                 else
