@@ -260,7 +260,7 @@ namespace SCLOCUA
 
         private void OpenLinkLabel1(object sender, LinkLabelLinkClickedEventArgs e)
         {
-            OpenLink("https://crowdin.com/project/star-citizen-localization-ua/invite?h=5459dc1e3bc7eb2319809d529deea2a11952526");
+            OpenLink("https://docs.google.com/forms/d/e/1FAIpQLSdcNr1EdqUU6K63MVwKyDX7-twxDsCQDw8PfgmDSu_D1q9GRA/viewform");
         }
 
         private void OpenLinkLabel2(object sender, LinkLabelLinkClickedEventArgs e)
@@ -290,6 +290,11 @@ namespace SCLOCUA
                 bool userCfgExists = File.Exists(Path.Combine(selectedFolderPath, UserCfgFileName));
                 checkBox1.Checked = !userCfgExists;
             }
+        }
+
+        private void linkLabel4_LinkClicked(object sender, LinkLabelLinkClickedEventArgs e)
+        {
+            OpenLink("https://docs.google.com/forms/d/e/1FAIpQLSfWRo63MgESTmzr-Cr0kPVkfgHSxZW2eZelTtGsw0htoMe_6A/viewform");
         }
     }
 }
