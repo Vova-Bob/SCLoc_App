@@ -5,7 +5,7 @@
 [![Website](https://img.shields.io/website?url=https%3A%2F%2Fusf.42web.io%2F&down_message=SITE&style=flat&label=USF&labelColor=blue&color=yellow)](https://usf.42web.io/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://github.com/Vova-Bob/SCLoc_App/blob/main/LICENSE)
 
-![SClocApp](https://github.com/Vova-Bob/SClocApp/blob/master/img/sclocua.jpg)
+![SClocApp](https://github.com/Vova-Bob/SCLocAppUA/blob/master/img/sclocua.jpg)
 
 Додаток для локалізації гри Star Citizen Українською
 
