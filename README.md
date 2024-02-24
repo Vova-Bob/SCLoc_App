@@ -1,5 +1,5 @@
 # SCLocalizationUA
-[![Остання версія випуску](https://img.shields.io/github/release/Vova-Bob/SCLoc_App?include_prereleases&sort=date&label=Остання%20версія)](https://github.com/Vova-Bob/SCLoc_App/releases/latest)
+[![SCLocalizationUA](https://img.shields.io/github/release/Vova-Bob/SCLoc_App?include_prereleases&sort=date&label=SCLocalizationUA)](https://github.com/Vova-Bob/SCLoc_App/releases/latest)
 [![Crowdin](https://badges.crowdin.net/star-citizen-localization-ua/localized.svg)](https://crowdin.com/project/star-citizen-localization-ua)
 [![Visitors](https://api.visitorbadge.io/api/visitors?path=Vova-Bob%2FSCLoc_App&labelColor=%2337d67a&countColor=%23263759&style=plastic&labelStyle=lower)](https://visitorbadge.io/status?path=Vova-Bob%2FSCLoc_App)
 [![Website](https://img.shields.io/website?url=https%3A%2F%2Fusf.42web.io%2F&down_message=SITE&style=flat&label=USF&labelColor=blue&color=yellow)](https://usf.42web.io/)
