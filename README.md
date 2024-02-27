@@ -11,6 +11,10 @@
 
 Підтримка Української локалізації гри зроблена учасниками [UKRAINIAN SPACE FLEET](https://robertsspaceindustries.com/orgs/UKR)
 
+[![Website](https://img.shields.io/website?url=https%3A%2F%2Fsend.monobank.ua%2Fjar%2F44HXkQkorg&up_message=%D0%9F%D1%80%D0%BE%D0%B5%D0%BA%D1%82&style=for-the-badge&label=%D0%9F%D1%96%D0%B4%D1%82%D1%80%D0%B8%D0%BC%D0%B0%D1%82%D0%B8)
+](https://send.monobank.ua/jar/44HXkQkorg)
+
+
 [Посилання на переклад](https://github.com/Vova-Bob/SC_localization_UA)
 
 Повідомити про помилку в перекладі або приєднатись до проєкту можна через наш [Discord](https://discord.gg/TkaN6Yv4VT)
