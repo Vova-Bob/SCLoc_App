@@ -34,4 +34,4 @@
 4. Включіть прапорець `user.cfg` якщо у вас не має цього файлу (конфігурації користувача) або створіть його власноруч з [інструкції](https://github.com/Vova-Bob/SC_localization_UA)
 5. Натисніть кнопку "встановити локалізацію"
    
-![Опис зображення](https://github.com/Vova-Bob/SCLoc_App/blob/main/img/6.png)
+![Опис зображення](https://github.com/Vova-Bob/SCLoc_App/blob/main/img/8.png)
