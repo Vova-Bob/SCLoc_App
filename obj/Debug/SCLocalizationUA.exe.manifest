@@ -4,7 +4,7 @@
   <description asmv2:iconFile="icon.ico" xmlns="urn:schemas-microsoft-com:asm.v1" />
   <application />
   <entryPoint>
-    <assemblyIdentity name="SCLocalizationUA" version="1.5.3.1" language="neutral" processorArchitecture="msil" />
+    <assemblyIdentity name="SCLocalizationUA" version="1.5.5.1" language="neutral" processorArchitecture="msil" />
     <commandLine file="SCLocalizationUA.exe" parameters="" />
   </entryPoint>
   <trustInfo>
@@ -43,6 +43,18 @@
     </dependentAssembly>
   </dependency>
   <dependency>
+    <dependentAssembly dependencyType="install" allowDelayedBinding="true" codebase="GlobalHotKey.dll" size="9216">
+      <assemblyIdentity name="GlobalHotKey" version="1.1.0.0" language="neutral" processorArchitecture="msil" />
+      <hash>
+        <dsig:Transforms>
+          <dsig:Transform Algorithm="urn:schemas-microsoft-com:HashTransforms.Identity" />
+        </dsig:Transforms>
+        <dsig:DigestMethod Algorithm="http://www.w3.org/2000/09/xmldsig#sha256" />
+        <dsig:DigestValue>NnsWLUL+y61spaRzfeETz6pylXP8sEpQNzI4EECPcvI=</dsig:DigestValue>
+      </hash>
+    </dependentAssembly>
+  </dependency>
+  <dependency>
     <dependentAssembly dependencyType="install" allowDelayedBinding="true" codebase="Newtonsoft.Json.dll" size="711952">
       <assemblyIdentity name="Newtonsoft.Json" version="13.0.0.0" publicKeyToken="30AD4FE6B2A6AEED" language="neutral" processorArchitecture="msil" />
       <hash>
@@ -55,26 +67,50 @@
     </dependentAssembly>
   </dependency>
   <dependency>
-    <dependentAssembly dependencyType="install" allowDelayedBinding="true" codebase="SCLocalizationUA.exe" size="5205464">
-      <assemblyIdentity name="SCLocalizationUA" version="1.5.3.1" language="neutral" processorArchitecture="msil" />
+    <dependentAssembly dependencyType="install" allowDelayedBinding="true" codebase="SCLocalizationUA.exe" size="6255064">
+      <assemblyIdentity name="SCLocalizationUA" version="1.5.5.1" language="neutral" processorArchitecture="msil" />
       <hash>
         <dsig:Transforms>
           <dsig:Transform Algorithm="urn:schemas-microsoft-com:HashTransforms.Identity" />
         </dsig:Transforms>
         <dsig:DigestMethod Algorithm="http://www.w3.org/2000/09/xmldsig#sha256" />
-        <dsig:DigestValue>bb/jLlqoh1R5lrEL4rBCpVm2sqEUq7jbe/DQM46iSSc=</dsig:DigestValue>
+        <dsig:DigestValue>NhOh4VYCxKQK1Mlf0NuQU96qoqcX9wjwSkp9Rta/EEA=</dsig:DigestValue>
       </hash>
     </dependentAssembly>
   </dependency>
   <dependency>
     <dependentAssembly dependencyType="install" allowDelayedBinding="true" codebase="uk-UA\SCLocalizationUA.resources.dll" size="39424">
-      <assemblyIdentity name="SCLocalizationUA.resources" version="1.5.3.1" language="uk-UA" processorArchitecture="msil" />
+      <assemblyIdentity name="SCLocalizationUA.resources" version="1.5.5.1" language="uk-UA" processorArchitecture="msil" />
       <hash>
         <dsig:Transforms>
           <dsig:Transform Algorithm="urn:schemas-microsoft-com:HashTransforms.Identity" />
         </dsig:Transforms>
         <dsig:DigestMethod Algorithm="http://www.w3.org/2000/09/xmldsig#sha256" />
-        <dsig:DigestValue>Az4peKDuztHDfkgFF12n0mm9BfoTS5BROaFox2VOOC8=</dsig:DigestValue>
+        <dsig:DigestValue>KBgh7+8Gc9+JFyXn3X09m2oZSmv39uASyA0x7LD+gkE=</dsig:DigestValue>
+      </hash>
+    </dependentAssembly>
+  </dependency>
+  <dependency>
+    <dependentAssembly dependencyType="install" allowDelayedBinding="true" codebase="SharpDX.dll" size="274944">
+      <assemblyIdentity name="SharpDX" version="4.2.0.0" publicKeyToken="B4DCF0F35E5521F1" language="neutral" processorArchitecture="msil" />
+      <hash>
+        <dsig:Transforms>
+          <dsig:Transform Algorithm="urn:schemas-microsoft-com:HashTransforms.Identity" />
+        </dsig:Transforms>
+        <dsig:DigestMethod Algorithm="http://www.w3.org/2000/09/xmldsig#sha256" />
+        <dsig:DigestValue>oK8lXqSwmozbmVuMb9EHXkbwmOI8I1HJdObe2bi2IM8=</dsig:DigestValue>
+      </hash>
+    </dependentAssembly>
+  </dependency>
+  <dependency>
+    <dependentAssembly dependencyType="install" allowDelayedBinding="true" codebase="SharpDX.XInput.dll" size="13824">
+      <assemblyIdentity name="SharpDX.XInput" version="4.2.0.0" publicKeyToken="B4DCF0F35E5521F1" language="neutral" processorArchitecture="msil" />
+      <hash>
+        <dsig:Transforms>
+          <dsig:Transform Algorithm="urn:schemas-microsoft-com:HashTransforms.Identity" />
+        </dsig:Transforms>
+        <dsig:DigestMethod Algorithm="http://www.w3.org/2000/09/xmldsig#sha256" />
+        <dsig:DigestValue>tICAQ9kfk/MTaa3l5AtdEBbFJ5VseGhgLQDlFILjTjM=</dsig:DigestValue>
       </hash>
     </dependentAssembly>
   </dependency>
@@ -87,13 +123,13 @@
       <dsig:DigestValue>5Qq66sewFX0wCW/t4GBQIcIXwSSUFJZVwKLh87sWe40=</dsig:DigestValue>
     </hash>
   </file>
-  <file name="SCLocalizationUA.exe.config" size="1012">
+  <file name="SCLocalizationUA.exe.config" size="1800">
     <hash>
       <dsig:Transforms>
         <dsig:Transform Algorithm="urn:schemas-microsoft-com:HashTransforms.Identity" />
       </dsig:Transforms>
       <dsig:DigestMethod Algorithm="http://www.w3.org/2000/09/xmldsig#sha256" />
-      <dsig:DigestValue>2GhzR7/4a0xVIcDrw/AHLsVuJhh/vC4rZ37lTFIzR2U=</dsig:DigestValue>
+      <dsig:DigestValue>n6T6dcBjca7HpWpG1Dkiawwd+fn+lfF+4gkhGUIlCVE=</dsig:DigestValue>
     </hash>
   </file>
   <compatibility xmlns="urn:schemas-microsoft-com:compatibility.v1">

@@ -37,15 +37,20 @@
             this.button2 = new System.Windows.Forms.Button();
             this.checkBox1 = new System.Windows.Forms.CheckBox();
             this.button3 = new System.Windows.Forms.Button();
-            this.checkBox2 = new System.Windows.Forms.CheckBox();
-            this.comboBox1 = new System.Windows.Forms.ComboBox();
             this.linkLabel1 = new System.Windows.Forms.LinkLabel();
             this.linkLabel2 = new System.Windows.Forms.LinkLabel();
             this.pictureBox1 = new System.Windows.Forms.PictureBox();
             this.linkLabel3 = new System.Windows.Forms.LinkLabel();
             this.linkLabel4 = new System.Windows.Forms.LinkLabel();
+            this.pictureBox2 = new System.Windows.Forms.PictureBox();
+            this.linkLabel5 = new System.Windows.Forms.LinkLabel();
+            this.buttonWiki = new System.Windows.Forms.Button();
+            this.buttonClearCache = new System.Windows.Forms.Button();
+            this.buttonAntiAFK = new System.Windows.Forms.Button();
+            this.buttonkillfeed = new System.Windows.Forms.Button();
             this.statusStrip1.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.pictureBox1)).BeginInit();
+            ((System.ComponentModel.ISupportInitialize)(this.pictureBox2)).BeginInit();
             this.SuspendLayout();
             // 
             // label1
@@ -104,27 +109,6 @@
             this.button3.Name = "button3";
             this.button3.UseVisualStyleBackColor = true;
             // 
-            // checkBox2
-            // 
-            resources.ApplyResources(this.checkBox2, "checkBox2");
-            this.checkBox2.ForeColor = System.Drawing.Color.Chartreuse;
-            this.checkBox2.Name = "checkBox2";
-            this.checkBox2.UseVisualStyleBackColor = false;
-            // 
-            // comboBox1
-            // 
-            this.comboBox1.BackColor = System.Drawing.Color.LightSteelBlue;
-            resources.ApplyResources(this.comboBox1, "comboBox1");
-            this.comboBox1.FormattingEnabled = true;
-            this.comboBox1.Items.AddRange(new object[] {
-            resources.GetString("comboBox1.Items"),
-            resources.GetString("comboBox1.Items1"),
-            resources.GetString("comboBox1.Items2"),
-            resources.GetString("comboBox1.Items3"),
-            resources.GetString("comboBox1.Items4"),
-            resources.GetString("comboBox1.Items5")});
-            this.comboBox1.Name = "comboBox1";
-            // 
             // linkLabel1
             // 
             resources.ApplyResources(this.linkLabel1, "linkLabel1");
@@ -163,18 +147,71 @@
             this.linkLabel4.TabStop = true;
             this.linkLabel4.LinkClicked += new System.Windows.Forms.LinkLabelLinkClickedEventHandler(this.linkLabel4_LinkClicked);
             // 
+            // pictureBox2
+            // 
+            this.pictureBox2.BackColor = System.Drawing.Color.Transparent;
+            this.pictureBox2.Cursor = System.Windows.Forms.Cursors.WaitCursor;
+            resources.ApplyResources(this.pictureBox2, "pictureBox2");
+            this.pictureBox2.Name = "pictureBox2";
+            this.pictureBox2.TabStop = false;
+            this.pictureBox2.Click += new System.EventHandler(this.pictureBox2_Click);
+            // 
+            // linkLabel5
+            // 
+            resources.ApplyResources(this.linkLabel5, "linkLabel5");
+            this.linkLabel5.LinkColor = System.Drawing.SystemColors.ControlLightLight;
+            this.linkLabel5.Name = "linkLabel5";
+            this.linkLabel5.TabStop = true;
+            this.linkLabel5.LinkClicked += new System.Windows.Forms.LinkLabelLinkClickedEventHandler(this.linkLabel5_LinkClicked);
+            // 
+            // buttonWiki
+            // 
+            resources.ApplyResources(this.buttonWiki, "buttonWiki");
+            this.buttonWiki.ForeColor = System.Drawing.Color.MediumSpringGreen;
+            this.buttonWiki.Name = "buttonWiki";
+            this.buttonWiki.UseVisualStyleBackColor = true;
+            this.buttonWiki.Click += new System.EventHandler(this.buttonWiki_Click);
+            // 
+            // buttonClearCache
+            // 
+            resources.ApplyResources(this.buttonClearCache, "buttonClearCache");
+            this.buttonClearCache.ForeColor = System.Drawing.Color.White;
+            this.buttonClearCache.Name = "buttonClearCache";
+            this.buttonClearCache.UseVisualStyleBackColor = true;
+            this.buttonClearCache.Click += new System.EventHandler(this.buttonClearCache_Click);
+            // 
+            // buttonAntiAFK
+            // 
+            resources.ApplyResources(this.buttonAntiAFK, "buttonAntiAFK");
+            this.buttonAntiAFK.ForeColor = System.Drawing.Color.MediumSpringGreen;
+            this.buttonAntiAFK.Name = "buttonAntiAFK";
+            this.buttonAntiAFK.UseVisualStyleBackColor = true;
+            // 
+            // buttonkillfeed
+            // 
+            resources.ApplyResources(this.buttonkillfeed, "buttonkillfeed");
+            this.buttonkillfeed.ForeColor = System.Drawing.Color.MediumSpringGreen;
+            this.buttonkillfeed.Name = "buttonkillfeed";
+            this.buttonkillfeed.UseVisualStyleBackColor = true;
+            this.buttonkillfeed.Click += new System.EventHandler(this.buttonkillfeed_Click);
+            // 
             // Form1
             // 
             resources.ApplyResources(this, "$this");
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(0)))), ((int)(((byte)(31)))), ((int)(((byte)(51)))));
+            this.BackgroundImage = global::SCLOCUA.Properties.Resources.launcher2_1;
+            this.Controls.Add(this.buttonkillfeed);
+            this.Controls.Add(this.buttonAntiAFK);
+            this.Controls.Add(this.buttonClearCache);
+            this.Controls.Add(this.buttonWiki);
+            this.Controls.Add(this.linkLabel5);
+            this.Controls.Add(this.pictureBox2);
             this.Controls.Add(this.linkLabel4);
             this.Controls.Add(this.linkLabel3);
             this.Controls.Add(this.pictureBox1);
             this.Controls.Add(this.linkLabel2);
             this.Controls.Add(this.linkLabel1);
-            this.Controls.Add(this.comboBox1);
-            this.Controls.Add(this.checkBox2);
             this.Controls.Add(this.button3);
             this.Controls.Add(this.checkBox1);
             this.Controls.Add(this.button2);
@@ -187,6 +224,7 @@
             this.statusStrip1.ResumeLayout(false);
             this.statusStrip1.PerformLayout();
             ((System.ComponentModel.ISupportInitialize)(this.pictureBox1)).EndInit();
+            ((System.ComponentModel.ISupportInitialize)(this.pictureBox2)).EndInit();
             this.ResumeLayout(false);
             this.PerformLayout();
 
@@ -202,13 +240,17 @@
         private System.Windows.Forms.Button button2;
         private System.Windows.Forms.CheckBox checkBox1;
         private System.Windows.Forms.Button button3;
-        private System.Windows.Forms.CheckBox checkBox2;
-        private System.Windows.Forms.ComboBox comboBox1;
         private System.Windows.Forms.LinkLabel linkLabel1;
         private System.Windows.Forms.LinkLabel linkLabel2;
         private System.Windows.Forms.PictureBox pictureBox1;
         private System.Windows.Forms.LinkLabel linkLabel3;
         private System.Windows.Forms.LinkLabel linkLabel4;
+        private System.Windows.Forms.PictureBox pictureBox2;
+        private System.Windows.Forms.LinkLabel linkLabel5;
+        private System.Windows.Forms.Button buttonWiki;
+        private System.Windows.Forms.Button buttonClearCache;
+        private System.Windows.Forms.Button buttonAntiAFK;
+        private System.Windows.Forms.Button buttonkillfeed;
     }
 }
 

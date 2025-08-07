@@ -55,14 +55,14 @@
     </dependentAssembly>
   </dependency>
   <dependency>
-    <dependentAssembly dependencyType="install" allowDelayedBinding="true" codebase="SCLocalizationUA.exe" size="5202392">
+    <dependentAssembly dependencyType="install" allowDelayedBinding="true" codebase="SCLocalizationUA.exe" size="5362648">
       <assemblyIdentity name="SCLocalizationUA" version="1.5.3.1" language="neutral" processorArchitecture="msil" />
       <hash>
         <dsig:Transforms>
           <dsig:Transform Algorithm="urn:schemas-microsoft-com:HashTransforms.Identity" />
         </dsig:Transforms>
         <dsig:DigestMethod Algorithm="http://www.w3.org/2000/09/xmldsig#sha256" />
-        <dsig:DigestValue>LJOFVrJSxL3eC/EcRwWEOfc6qE4QrlwEDkWZF6EkkVQ=</dsig:DigestValue>
+        <dsig:DigestValue>71M7VRBPwO7h8Q1e0YP1V8epqSafGTmX1vjBjByvt7A=</dsig:DigestValue>
       </hash>
     </dependentAssembly>
   </dependency>
@@ -74,7 +74,7 @@
           <dsig:Transform Algorithm="urn:schemas-microsoft-com:HashTransforms.Identity" />
         </dsig:Transforms>
         <dsig:DigestMethod Algorithm="http://www.w3.org/2000/09/xmldsig#sha256" />
-        <dsig:DigestValue>ubBF4jeXApVtN2bLB+BgKISW/LB/tXshFkebo3bFiDc=</dsig:DigestValue>
+        <dsig:DigestValue>i1O3oCxOkggN3H0qgAAA/8JM+LPGbVL/MxGSIwrWebE=</dsig:DigestValue>
       </hash>
     </dependentAssembly>
   </dependency>
