@@ -14,6 +14,7 @@ namespace SCLOCUA
     {
         private const string UserCfgFileName = "user.cfg";
         private const string GlobalIniFileName = "global.ini";
+        private const string LocalizationPath = "Data/Localization/korean_(south_korea)";
         private const string GithubGistUrlPattern = @"https://gist.github.com/\w+/\w+";
         private const string GithubReleasesApiUrl = "https://api.github.com/repos/Vova-Bob/SC_localization_UA/releases";  // API для отримання релізів
         private WikiForm wikiForm = null; // Оголошуємо змінну для форми
@@ -26,11 +27,7 @@ namespace SCLOCUA
         {
             InitializeComponent();
 
-            httpClient = new HttpClient();
-            if (!httpClient.DefaultRequestHeaders.Contains("User-Agent"))
-            {
-                httpClient.DefaultRequestHeaders.Add("User-Agent", "SCLOCUA");
-            }
+            httpClient = HttpClientService.Client;
 
             this.MaximizeBox = false;
             this.Icon = Properties.Resources.Icon;
@@ -43,13 +40,13 @@ namespace SCLOCUA
             toolTip.SetToolTip(button2, "Встановити / Оновити файли локалізації");
             toolTip.SetToolTip(button3, "Видалити файли локалізації");
 
-
             // Ініціалізація функції анти-AFK
             _antiAFK = new AntiAFK();
             toolTip.SetToolTip(buttonAntiAFK, "Увімкнути/Вимкнути Anti-AFK"); // Підказка для кнопки
 
             // Підключення обробника кліку кнопки
             buttonAntiAFK.Click += ButtonAntiAFK_Click;
+            this.FormClosing += Form1_FormClosing;
 
             InitializeUI();
             InitializeEvents();
@@ -66,7 +63,7 @@ namespace SCLOCUA
                 UpdateLabel();
                 button2.Enabled = true;
                 bool userCfgExists = File.Exists(Path.Combine(selectedFolderPath, UserCfgFileName));
-                bool globalIniExists = File.Exists(Path.Combine(selectedFolderPath, $"Data/Localization/korean_(south_korea)/{GlobalIniFileName}"));
+                bool globalIniExists = File.Exists(Path.Combine(selectedFolderPath, LocalizationPath, GlobalIniFileName));
                 button2.Text = userCfgExists || globalIniExists ? "Оновити локалізацію" : "Встановити локалізацію";
             }
         }
@@ -118,7 +115,7 @@ namespace SCLOCUA
             try
             {
                 bool userCfgExists = File.Exists(Path.Combine(selectedFolderPath, UserCfgFileName));
-                bool globalIniExists = File.Exists(Path.Combine(selectedFolderPath, $"Data/Localization/korean_(south_korea)/{GlobalIniFileName}"));
+                bool globalIniExists = File.Exists(Path.Combine(selectedFolderPath, LocalizationPath, GlobalIniFileName));
 
                 if (!userCfgExists && checkBox1.Checked)
                 {
@@ -140,12 +137,12 @@ namespace SCLOCUA
 
                 if (!string.IsNullOrEmpty(githubReleaseUrl))
                 {
-                    string localFilePath = Path.Combine(selectedFolderPath, $"Data/Localization/korean_(south_korea)/{GlobalIniFileName}");
+                    string localFilePath = Path.Combine(selectedFolderPath, LocalizationPath, GlobalIniFileName);
                     await DownloadFileAsync(githubReleaseUrl, localFilePath);  // Завантажуємо файл з GitHub
                     toolStripProgressBar1.Value++;
                 }
 
-                string gistContent = File.ReadAllText(Path.Combine(selectedFolderPath, $"Data/Localization/korean_(south_korea)/{GlobalIniFileName}"));
+                string gistContent = File.ReadAllText(Path.Combine(selectedFolderPath, LocalizationPath, GlobalIniFileName));
 
                 if (DetectGithubGistUrl(gistContent))
                 {
@@ -254,7 +251,7 @@ namespace SCLOCUA
             try
             {
                 bool userCfgExists = File.Exists(Path.Combine(selectedFolderPath, UserCfgFileName));
-                bool globalIniExists = File.Exists(Path.Combine(selectedFolderPath, $"Data/Localization/korean_(south_korea)/{GlobalIniFileName}"));
+                bool globalIniExists = File.Exists(Path.Combine(selectedFolderPath, LocalizationPath, GlobalIniFileName));
 
                 if (userCfgExists || globalIniExists)
                 {
@@ -264,7 +261,7 @@ namespace SCLOCUA
                     }
                     if (globalIniExists)
                     {
-                        File.Delete(Path.Combine(selectedFolderPath, $"Data/Localization/korean_(south_korea)/{GlobalIniFileName}"));
+                        File.Delete(Path.Combine(selectedFolderPath, LocalizationPath, GlobalIniFileName));
                     }
 
                     int initialValue = toolStripProgressBar1.Value;
@@ -464,6 +461,11 @@ namespace SCLOCUA
         private void ButtonAntiAFK_Click(object sender, EventArgs e)
         {
             _antiAFK.ToggleAntiAFK(toolStripStatusLabel1);
+        }
+
+        private void Form1_FormClosing(object sender, FormClosingEventArgs e)
+        {
+            _antiAFK.Stop();
         }
         // Кнопка KillFeed
         private killFeed overlayForm;

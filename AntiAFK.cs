@@ -6,7 +6,7 @@ using System.Windows.Forms;
 
 namespace SCLOCUA
 {
-    internal class AntiAFK
+    internal class AntiAFK : IDisposable
     {
         private readonly System.Threading.Timer _timer;
         private bool _isRunning = false;
@@ -34,26 +34,35 @@ namespace SCLOCUA
         {
             if (_isRunning)
             {
-                // Вимикаємо таймер та скасування
-                _timer.Change(Timeout.Infinite, Timeout.Infinite);
-                _cancellationTokenSource?.Cancel();
-                _cancellationTokenSource?.Dispose(); // Очищаємо ресурси токену
-                _cancellationTokenSource = new CancellationTokenSource(); // Перезавантажуємо токен для майбутнього використання
-
+                Stop();
                 statusLabel.Text = "Anti-AFK вимкнено";
-                _isRunning = false;
             }
             else
             {
-                // Ініціалізуємо скасування
+                HookManager.Rehook();
                 _cancellationTokenSource = new CancellationTokenSource();
-                var token = _cancellationTokenSource.Token;
 
                 // Запускаємо таймер з можливістю зупинки
                 _timer.Change(0, 1000);  // Перевіряємо кожну секунду
                 statusLabel.Text = "Anti-AFK увімкнено";
                 _isRunning = true;
             }
+        }
+
+        public void Stop()
+        {
+            _timer.Change(Timeout.Infinite, Timeout.Infinite);
+            _cancellationTokenSource?.Cancel();
+            _cancellationTokenSource?.Dispose();
+            _cancellationTokenSource = new CancellationTokenSource();
+            HookManager.Unhook();
+            _isRunning = false;
+        }
+
+        public void Dispose()
+        {
+            Stop();
+            _timer.Dispose();
         }
 
         private void TimerCallback(object state)
@@ -172,8 +181,28 @@ namespace SCLOCUA
 
         public static void Unhook()
         {
-            UnhookWindowsHookEx(_keyboardHookID);
-            UnhookWindowsHookEx(_mouseHookID);
+            if (_keyboardHookID != IntPtr.Zero)
+            {
+                UnhookWindowsHookEx(_keyboardHookID);
+                _keyboardHookID = IntPtr.Zero;
+            }
+            if (_mouseHookID != IntPtr.Zero)
+            {
+                UnhookWindowsHookEx(_mouseHookID);
+                _mouseHookID = IntPtr.Zero;
+            }
+        }
+
+        public static void Rehook()
+        {
+            if (_keyboardHookID == IntPtr.Zero)
+            {
+                _keyboardHookID = SetHook(_keyboardProc, WH_KEYBOARD_LL);
+            }
+            if (_mouseHookID == IntPtr.Zero)
+            {
+                _mouseHookID = SetHook(_mouseProc, WH_MOUSE_LL);
+            }
         }
 
         private static IntPtr SetHook(Delegate proc, int hookType)
