@@ -48,6 +48,7 @@
             this.buttonClearCache = new System.Windows.Forms.Button();
             this.buttonAntiAFK = new System.Windows.Forms.Button();
             this.buttonkillfeed = new System.Windows.Forms.Button();
+            this.buttonexhangar = new System.Windows.Forms.Button();
             this.statusStrip1.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.pictureBox1)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.pictureBox2)).BeginInit();
@@ -193,12 +194,20 @@
             this.buttonkillfeed.UseVisualStyleBackColor = true;
             this.buttonkillfeed.Click += new System.EventHandler(this.buttonkillfeed_Click);
             // 
+            // buttonexhangar
+            // 
+            resources.ApplyResources(this.buttonexhangar, "buttonexhangar");
+            this.buttonexhangar.ForeColor = System.Drawing.Color.MediumSpringGreen;
+            this.buttonexhangar.Name = "buttonexhangar";
+            this.buttonexhangar.UseVisualStyleBackColor = true;
+            // 
             // Form1
             // 
             resources.ApplyResources(this, "$this");
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(0)))), ((int)(((byte)(31)))), ((int)(((byte)(51)))));
             this.BackgroundImage = global::SCLOCUA.Properties.Resources.launcher2_1;
+            this.Controls.Add(this.buttonexhangar);
             this.Controls.Add(this.buttonkillfeed);
             this.Controls.Add(this.buttonAntiAFK);
             this.Controls.Add(this.buttonClearCache);
@@ -249,6 +258,7 @@
         private System.Windows.Forms.Button buttonClearCache;
         private System.Windows.Forms.Button buttonAntiAFK;
         private System.Windows.Forms.Button buttonkillfeed;
+        private System.Windows.Forms.Button buttonexhangar;
     }
 }
 
