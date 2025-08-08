@@ -108,11 +108,17 @@ namespace SCLOCUA
 
             // Update timer
             _updateTimer = new Timer { Interval = 1000 };
-            _updateTimer.Tick += (s, e) => UpdateDisplay();
+            _updateTimer.Tick += UpdateTimerTick;
 
-            Load += async (s, e) => await InitializeAsync();
-            FormClosed += (s, e) => UnregisterHotKeys();
+            Load += HangarTimerOverlay_Load;
         }
+
+        private async void HangarTimerOverlay_Load(object sender, EventArgs e)
+        {
+            await InitializeAsync();
+        }
+
+        private void UpdateTimerTick(object sender, EventArgs e) => UpdateDisplay();
 
         /// <summary>
         /// Fetches the global cycle start time from the remote JavaScript file
@@ -303,6 +309,17 @@ namespace SCLOCUA
             base.WndProc(ref m);
         }
         #endregion
+
+        protected override void OnFormClosed(FormClosedEventArgs e)
+        {
+            _updateTimer.Stop();
+            _updateTimer.Tick -= UpdateTimerTick;
+            _updateTimer.Dispose();
+            Load -= HangarTimerOverlay_Load;
+            _opacityTip.Dispose();
+            UnregisterHotKeys();
+            base.OnFormClosed(e);
+        }
 
         protected override bool ProcessCmdKey(ref Message msg, Keys keyData)
         {
