@@ -5,6 +5,7 @@ using System.IO.Ports;
 using System.Media;
 using System.Runtime.InteropServices;
 using System.Text.RegularExpressions;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 using System.Linq;
@@ -33,6 +34,9 @@ namespace SCLOCUA
         private float opacityLevel = 0.6f; // Початкова прозорість фону
         private const float opacityStep = 0.1f;
 
+        private CancellationTokenSource logCts;
+        private Task logTask;
+
         public killFeed(string folderPath)
         {
             InitializeComponent();
@@ -54,10 +58,12 @@ namespace SCLOCUA
             this.MouseMove += Form_MouseMove;
             this.MouseUp += Form_MouseUp;
             this.KeyDown += Form_KeyDown;
+            this.FormClosing += killFeed_FormClosing;
 
             logPath = Path.Combine(folderPath, "game.log");
 
-            _ = ReadLogAsync();
+            logCts = new CancellationTokenSource();
+            logTask = ReadLogAsync(logCts.Token);
 
             soundFilePath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "killSound.wav");
             if (File.Exists(soundFilePath))
@@ -134,11 +140,34 @@ namespace SCLOCUA
 
         private void ExitApplication(object sender, EventArgs e)
         {
-            trayIcon.Visible = false;
-            Application.Exit();
+            this.Close();
         }
 
-        private async Task ReadLogAsync()
+        private async void killFeed_FormClosing(object sender, FormClosingEventArgs e)
+        {
+            if (logCts != null)
+            {
+                logCts.Cancel();
+                try
+                {
+                    if (logTask != null)
+                        await logTask;
+                }
+                catch (OperationCanceledException)
+                {
+                }
+            }
+
+            UnregisterHotKey(this.Handle, HOTKEY_ID);
+
+            if (trayIcon != null)
+            {
+                trayIcon.Visible = false;
+                trayIcon.Dispose();
+            }
+        }
+
+        private async Task ReadLogAsync(CancellationToken token)
         {
             try
             {
@@ -148,7 +177,7 @@ namespace SCLOCUA
                     {
                         fs.Seek(0, SeekOrigin.End);
 
-                        while (true)
+                        while (!token.IsCancellationRequested)
                         {
                             var line = await reader.ReadLineAsync();
                             if (line != null)
@@ -162,11 +191,15 @@ namespace SCLOCUA
                             }
                             else
                             {
-                                await Task.Delay(100);
+                                await Task.Delay(100, token);
                             }
                         }
                     }
                 }
+            }
+            catch (OperationCanceledException)
+            {
+                // Ignore cancellation
             }
             catch (Exception ex)
             {
