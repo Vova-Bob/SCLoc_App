@@ -486,7 +486,7 @@ namespace SCLOCUA
             }
             else
             {
-                _hangarOverlay.ToggleVisibility();
+                _hangarOverlay.BringToFront();
             }
         }
         // Кнопка KillFeed
