@@ -323,37 +323,78 @@ namespace SCLOCUA
             int lineHeight = (int)(20 * scaleFactor);
 
             foreach (Control c in this.Controls)
-                if (c is Label lbl) lbl.Top -= lineHeight;
+                if (c is RichTextBox rtb) rtb.Top -= lineHeight;
 
-            var newLabel = new Label
+            var newBox = new RichTextBox
             {
-                AutoSize = true,
-                ForeColor = Color.White, // Завжди яскраво білий текст
-                BackColor = Color.Transparent,
-                Text = text,
+                ReadOnly = true,
+                BorderStyle = BorderStyle.None,
+                ScrollBars = RichTextBoxScrollBars.None,
+                BackColor = Color.Black,
+                ForeColor = Color.White,
                 Font = new Font("Consolas", 10 * scaleFactor),
                 Left = 5,
-                Top = this.ClientSize.Height - lineHeight
+                Top = this.ClientSize.Height - lineHeight,
+                Width = this.Width - 10,
+                Height = lineHeight,
+                Multiline = false,
+                TabStop = false,
+                ShortcutsEnabled = false
             };
 
-            this.Controls.Add(newLabel);
-            newLabel.MouseEnter += (s, e) => Cursor.Hide();
-            newLabel.MouseLeave += (s, e) => Cursor.Show();
+            // Додаємо рядок з кольоровим форматуванням
+            int closeBracket = text.IndexOf(']');
+            string timePart = closeBracket >= 0 ? text.Substring(0, closeBracket + 1) + " " : "";
+            string rest = closeBracket >= 0 && text.Length > closeBracket + 2 ? text.Substring(closeBracket + 2) : text;
+            int killIndex = rest.IndexOf(" вбив ");
 
-            var toRemove = new System.Collections.Generic.List<Label>();
+            newBox.SelectionColor = Color.White;
+            newBox.AppendText(timePart);
+
+            if (killIndex >= 0)
+            {
+                string killer = rest.Substring(0, killIndex);
+                string victim = rest.Substring(killIndex + " вбив ".Length);
+
+                newBox.SelectionColor = Color.Green;
+                newBox.AppendText(killer);
+
+                newBox.SelectionColor = Color.White;
+                newBox.AppendText(" ");
+
+                newBox.SelectionColor = Color.Yellow;
+                newBox.AppendText("вбив");
+
+                newBox.SelectionColor = Color.White;
+                newBox.AppendText(" ");
+
+                newBox.SelectionColor = Color.Red;
+                newBox.AppendText(victim);
+            }
+            else
+            {
+                newBox.SelectionColor = Color.White;
+                newBox.AppendText(rest);
+            }
+
+            this.Controls.Add(newBox);
+            newBox.MouseEnter += (s, e) => Cursor.Hide();
+            newBox.MouseLeave += (s, e) => Cursor.Show();
+
+            var toRemove = new System.Collections.Generic.List<RichTextBox>();
             foreach (Control control in this.Controls)
             {
-                var lbl = control as Label;
-                if (lbl != null && lbl.Bottom < 0)
+                var rtb = control as RichTextBox;
+                if (rtb != null && rtb.Bottom < 0)
                 {
-                    toRemove.Add(lbl);
+                    toRemove.Add(rtb);
                 }
             }
 
-            foreach (var lbl in toRemove)
+            foreach (var rtb in toRemove)
             {
-                this.Controls.Remove(lbl);
-                lbl.Dispose();
+                this.Controls.Remove(rtb);
+                rtb.Dispose();
             }
         }
 
@@ -400,12 +441,14 @@ namespace SCLOCUA
             for (int i = this.Controls.Count - 1; i >= 0; i--)
             {
                 Control c = this.Controls[i];
-                Label lbl = c as Label;
-                if (lbl != null)
+                RichTextBox rtb = c as RichTextBox;
+                if (rtb != null)
                 {
-                    lbl.Font = new Font("Consolas", 10 * scaleFactor);
-                    lbl.Top = y;
-                    lbl.Left = 5;
+                    rtb.Font = new Font("Consolas", 10 * scaleFactor);
+                    rtb.Top = y;
+                    rtb.Left = 5;
+                    rtb.Width = this.Width - 10;
+                    rtb.Height = lineHeight;
                     y -= lineHeight;
                 }
             }
