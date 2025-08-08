@@ -145,7 +145,6 @@
             this.linkLabel4.LinkColor = System.Drawing.Color.DeepSkyBlue;
             this.linkLabel4.Name = "linkLabel4";
             this.linkLabel4.TabStop = true;
-            this.linkLabel4.LinkClicked += new System.Windows.Forms.LinkLabelLinkClickedEventHandler(this.linkLabel4_LinkClicked);
             // 
             // pictureBox2
             // 
@@ -162,7 +161,6 @@
             this.linkLabel5.LinkColor = System.Drawing.SystemColors.ControlLightLight;
             this.linkLabel5.Name = "linkLabel5";
             this.linkLabel5.TabStop = true;
-            this.linkLabel5.LinkClicked += new System.Windows.Forms.LinkLabelLinkClickedEventHandler(this.linkLabel5_LinkClicked);
             // 
             // buttonWiki
             // 

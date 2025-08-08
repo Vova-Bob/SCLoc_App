@@ -166,7 +166,7 @@ namespace SCLOCUA
 
         private async Task<string> ReadFileWithTimeoutAsync(string path, int timeout = 5000)
         {
-            var task = File.ReadAllTextAsync(path);
+            var task = Task.Run(() => File.ReadAllText(path));
             if (await Task.WhenAny(task, Task.Delay(timeout)) != task)
                 throw new TimeoutException("Читання файлу перевищило час очікування");
             return await task;
