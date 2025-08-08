@@ -21,6 +21,7 @@ namespace SCLOCUA
         private ToolTip toolTip = new ToolTip(); // Створення об'єкта ToolTip
         private string selectedFolderPath = "";
         private AntiAFK _antiAFK;
+        private HangarTimerOverlay _overlay;
 
         public Form1()
         {
@@ -72,6 +73,7 @@ namespace SCLOCUA
             button1.Click += SelectFolderButtonClick;
             button2.Click += UpdateLocalizationButtonClick;
             button3.Click += DeleteFilesButtonClick;
+            buttonExHangar.Click += buttonExHangar_Click;
 
             AssignLink(linkLabel1, "https://docs.google.com/forms/d/e/1FAIpQLSdcNr1EdqUU6K63MVwKyDX7-twxDsCQDw8PfgmDSu_D1q9GRA/viewform");
             AssignLink(linkLabel2, "https://discord.gg/QVV2G2aKzf");
@@ -467,9 +469,25 @@ namespace SCLOCUA
             _antiAFK.ToggleAntiAFK(toolStripStatusLabel1);
         }
 
+        private void buttonExHangar_Click(object sender, EventArgs e)
+        {
+            if (_overlay == null || _overlay.IsDisposed)
+            {
+                _overlay = new HangarTimerOverlay();
+                _overlay.Show();
+            }
+            else
+            {
+                if (!_overlay.Visible)
+                    _overlay.Show();
+                _overlay.BringToFront();
+            }
+        }
+
         private void Form1_FormClosing(object sender, FormClosingEventArgs e)
         {
             _antiAFK.Dispose();
+            _overlay?.Dispose();
         }
         // Кнопка KillFeed
         private killFeed overlayForm;
