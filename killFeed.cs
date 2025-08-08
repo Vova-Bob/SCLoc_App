@@ -357,7 +357,7 @@ namespace SCLOCUA
                 string killer = rest.Substring(0, killIndex);
                 string victim = rest.Substring(killIndex + " вбив ".Length);
 
-                // Killer — яскраво-зелений, жирний
+                // Killer — яскраво-зелений, жирний 
                 newBox.SelectionColor = Color.FromArgb(0, 255, 0);
                 newBox.SelectionFont = new Font(newBox.Font, FontStyle.Bold);
                 newBox.AppendText(killer);
