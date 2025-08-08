@@ -48,8 +48,6 @@ namespace SCLOCUA
         private CancellationTokenSource logCts;
         private Task logTask;
 
-        private RichTextBox feedBox;
-
         public killFeed(string folderPath)
         {
             InitializeComponent();
@@ -83,21 +81,6 @@ namespace SCLOCUA
                 soundPlayer = new SoundPlayer(soundFilePath);
             else
                 MessageBox.Show($"Файл звуку не знайдено: {soundFilePath}", "Помилка звуку", MessageBoxButtons.OK, MessageBoxIcon.Error);
-
-            feedBox = new RichTextBox
-            {
-                ReadOnly = true,
-                BorderStyle = BorderStyle.None,
-                BackColor = Color.Black,
-                ForeColor = Color.White,
-                Font = new Font("Consolas", 10 * scaleFactor),
-                Dock = DockStyle.Fill,
-                ScrollBars = RichTextBoxScrollBars.None,
-                TabStop = false
-            };
-            feedBox.MouseEnter += (s, e) => Cursor.Hide();
-            feedBox.MouseLeave += (s, e) => Cursor.Show();
-            this.Controls.Add(feedBox);
 
             InitializeTray();
             RegisterGlobalHotKeys();
@@ -337,48 +320,41 @@ namespace SCLOCUA
                 return;
             }
 
-            const int maxLines = 10;
-            if (feedBox.Lines.Length >= maxLines)
+            int lineHeight = (int)(20 * scaleFactor);
+
+            foreach (Control c in this.Controls)
+                if (c is Label lbl) lbl.Top -= lineHeight;
+
+            var newLabel = new Label
             {
-                int firstLineEnd = feedBox.Text.IndexOf('\n');
-                if (firstLineEnd >= 0)
+                AutoSize = true,
+                ForeColor = Color.White, // Завжди яскраво білий текст
+                BackColor = Color.Transparent,
+                Text = text,
+                Font = new Font("Consolas", 10 * scaleFactor),
+                Left = 5,
+                Top = this.ClientSize.Height - lineHeight
+            };
+
+            this.Controls.Add(newLabel);
+            newLabel.MouseEnter += (s, e) => Cursor.Hide();
+            newLabel.MouseLeave += (s, e) => Cursor.Show();
+
+            var toRemove = new System.Collections.Generic.List<Label>();
+            foreach (Control control in this.Controls)
+            {
+                var lbl = control as Label;
+                if (lbl != null && lbl.Bottom < 0)
                 {
-                    feedBox.SelectionStart = 0;
-                    feedBox.SelectionLength = firstLineEnd + 1;
-                    feedBox.SelectedText = string.Empty;
+                    toRemove.Add(lbl);
                 }
             }
 
-            var suicideMatch = Regex.Match(text, @"\[(.*?)\] (.*) помер \(самогубство\)");
-            var killMatch = Regex.Match(text, @"\[(.*?)\] (.*?) вбив (.*)");
-
-            feedBox.SelectionStart = feedBox.TextLength;
-
-            if (suicideMatch.Success)
+            foreach (var lbl in toRemove)
             {
-                feedBox.SelectionColor = Color.LightBlue;
-                feedBox.AppendText(text);
+                this.Controls.Remove(lbl);
+                lbl.Dispose();
             }
-            else if (killMatch.Success)
-            {
-                feedBox.SelectionColor = Color.White;
-                feedBox.AppendText($"[{killMatch.Groups[1].Value}] ");
-                feedBox.SelectionColor = Color.Green;
-                feedBox.AppendText(killMatch.Groups[2].Value);
-                feedBox.SelectionColor = Color.White;
-                feedBox.AppendText(" вбив ");
-                feedBox.SelectionColor = Color.Red;
-                feedBox.AppendText(killMatch.Groups[3].Value);
-            }
-            else
-            {
-                feedBox.SelectionColor = Color.White;
-                feedBox.AppendText(text);
-            }
-
-            feedBox.AppendText(Environment.NewLine);
-            feedBox.SelectionStart = feedBox.TextLength;
-            feedBox.ScrollToCaret();
         }
 
         private void PlayKillSound()
@@ -417,7 +393,22 @@ namespace SCLOCUA
         {
             this.Width = (int)(400 * scaleFactor);
             this.Height = (int)(200 * scaleFactor);
-            feedBox.Font = new Font("Consolas", 10 * scaleFactor);
+
+            int lineHeight = (int)(20 * scaleFactor);
+            int y = this.ClientSize.Height - lineHeight;
+
+            for (int i = this.Controls.Count - 1; i >= 0; i--)
+            {
+                Control c = this.Controls[i];
+                Label lbl = c as Label;
+                if (lbl != null)
+                {
+                    lbl.Font = new Font("Consolas", 10 * scaleFactor);
+                    lbl.Top = y;
+                    lbl.Left = 5;
+                    y -= lineHeight;
+                }
+            }
         }
     }
 }
