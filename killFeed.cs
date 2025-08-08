@@ -38,6 +38,7 @@ namespace SCLOCUA
         private const int VK_RIGHT = 0x27;
 
         private const int WM_HOTKEY = 0x0312;
+        private const int WM_DESTROY = 0x0002;
 
         private float scaleFactor = 1.0f;
         private const float scaleStep = 0.1f;
@@ -169,6 +170,15 @@ namespace SCLOCUA
                         SetTopMost();
                         break;
                 }
+            }
+            else if (m.Msg == WM_DESTROY)
+            {
+                // Блокування можливого залишку гарячих клавіш при закритті вікна
+                UnregisterHotKey(this.Handle, HOTKEY_TOGGLE);
+                UnregisterHotKey(this.Handle, HOTKEY_SCALE_UP);
+                UnregisterHotKey(this.Handle, HOTKEY_SCALE_DOWN);
+                UnregisterHotKey(this.Handle, HOTKEY_OPACITY_DEC);
+                UnregisterHotKey(this.Handle, HOTKEY_OPACITY_INC);
             }
 
             base.WndProc(ref m);
