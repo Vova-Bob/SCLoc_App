@@ -472,6 +472,9 @@ namespace SCLOCUA
         private void Form1_FormClosing(object sender, FormClosingEventArgs e)
         {
             _antiAFK.Dispose();
+            _hangarOverlay?.Close();
+            _hangarOverlay?.Dispose();
+            _hangarOverlay = null;
         }
 
         private void buttonExHangar_Click(object sender, EventArgs e)
