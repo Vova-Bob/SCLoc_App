@@ -5,6 +5,7 @@ using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 using System.Runtime.InteropServices;
+using System.Globalization;
 
 namespace SCLOCUA
 {
@@ -125,7 +126,8 @@ namespace SCLOCUA
                 _syncError = true;
                 _statusLabel.Text = "SYNC ERROR";
                 _statusLabel.ForeColor = Color.Red;
-                _phaseTimerLabel.Text = "unable to fetch";
+                if (string.IsNullOrEmpty(_phaseTimerLabel.Text))
+                    _phaseTimerLabel.Text = "unable to fetch";
             }
             else
             {
@@ -143,21 +145,28 @@ namespace SCLOCUA
         {
             try
             {
-                using (HttpClient client = new HttpClient())
-                {
-                    string js = await client.GetStringAsync(APP_JS_URL);
-                    var match = Regex.Match(js, "INITIAL_OPEN_TIME\\s*=\\s*new Date\\('([^']+)'\\)");
-                    if (!match.Success)
-                        return false;
-                    string value = match.Groups[1].Value;
-                    _cycleStart = DateTime.Parse(value, null, System.Globalization.DateTimeStyles.RoundtripKind);
-                    return true;
-                }
+                var client = HttpClientService.Client;
+                string js = await client.GetStringAsync(APP_JS_URL);
+                var match = Regex.Match(js, "INITIAL_OPEN_TIME\\s*=\\s*new Date\\('([^']+)'\\)");
+                if (!match.Success)
+                    return false;
+                string value = match.Groups[1].Value;
+                _cycleStart = DateTime.ParseExact(value, "yyyy-MM-ddTHH:mm:ss.fffK", CultureInfo.InvariantCulture, DateTimeStyles.AdjustToUniversal);
+                return true;
+            }
+            catch (TaskCanceledException)
+            {
+                _phaseTimerLabel.Text = "request timed out";
+            }
+            catch (FormatException)
+            {
+                _phaseTimerLabel.Text = "invalid date format";
             }
             catch
             {
-                return false;
+                _phaseTimerLabel.Text = "fetch error";
             }
+            return false;
         }
 
         private void UpdateDisplay()
