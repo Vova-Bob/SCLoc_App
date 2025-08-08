@@ -1,3 +1,4 @@
+using System;
 using System.Net.Http;
 
 namespace SCLOCUA
@@ -8,7 +9,10 @@ namespace SCLOCUA
 
         static HttpClientService()
         {
-            Client = new HttpClient();
+            Client = new HttpClient
+            {
+                Timeout = TimeSpan.FromSeconds(10)
+            };
             if (!Client.DefaultRequestHeaders.Contains("User-Agent"))
             {
                 Client.DefaultRequestHeaders.Add("User-Agent", "SCLOCUA");
