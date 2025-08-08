@@ -26,8 +26,7 @@ namespace SCLOCUA
 
         private readonly Label _statusLabel;
         private readonly Label _phaseTimerLabel;
-        private readonly Label[] _lampLabels = new Label[5];
-        private readonly Label[] _lampTimerLabels = new Label[5];
+        private readonly LampIndicator[] _lamps = new LampIndicator[5];
         private readonly Timer _updateTimer;
         private readonly ToolTip _opacityTip = new ToolTip();
 
@@ -69,43 +68,41 @@ namespace SCLOCUA
             Controls.Add(_phaseTimerLabel);
 
             // Lamps panel
-            var panel = new TableLayoutPanel
+            var panel = new Panel
             {
                 Dock = DockStyle.Fill,
-                ColumnCount = 5,
-                RowCount = 2,
                 BackColor = Color.Transparent
             };
-            panel.ColumnStyles.Clear();
-            for (int i = 0; i < 5; i++)
-                panel.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 20F));
-            panel.RowStyles.Add(new RowStyle(SizeType.Percent, 60F));
-            panel.RowStyles.Add(new RowStyle(SizeType.Percent, 40F));
+            Controls.Add(panel);
 
-            var lampFont = new Font("Segoe UI Symbol", 32, FontStyle.Regular);
-            var timerFont = new Font("Consolas", 12, FontStyle.Bold);
+            const int lampDiameter = 40;
+            const int lampSpacing = 20;
+            const int lampHeight = 60;
+
             for (int i = 0; i < 5; i++)
             {
-                _lampLabels[i] = new Label
+                var lamp = new LampIndicator
                 {
-                    Text = "●",
-                    Dock = DockStyle.Fill,
-                    TextAlign = ContentAlignment.MiddleCenter,
-                    Font = lampFont,
-                    ForeColor = Color.Black
+                    Size = new Size(lampDiameter, lampHeight),
+                    LampColor = Color.Black
                 };
-                panel.Controls.Add(_lampLabels[i], i, 0);
-
-                _lampTimerLabels[i] = new Label
-                {
-                    Dock = DockStyle.Fill,
-                    TextAlign = ContentAlignment.TopCenter,
-                    Font = timerFont,
-                    ForeColor = Color.White
-                };
-                panel.Controls.Add(_lampTimerLabels[i], i, 1);
+                _lamps[i] = lamp;
+                panel.Controls.Add(lamp);
             }
-            Controls.Add(panel);
+
+            void LayoutLamps()
+            {
+                int totalWidth = _lamps.Length * lampDiameter + (_lamps.Length - 1) * lampSpacing;
+                int startX = (panel.ClientSize.Width - totalWidth) / 2;
+                int y = (panel.ClientSize.Height - lampHeight) / 2;
+                for (int i = 0; i < _lamps.Length; i++)
+                {
+                    _lamps[i].Location = new Point(startX + i * (lampDiameter + lampSpacing), y);
+                }
+            }
+
+            panel.Resize += (s, e) => LayoutLamps();
+            LayoutLamps();
 
             // Update timer
             _updateTimer = new Timer { Interval = 1000 };
@@ -259,9 +256,11 @@ namespace SCLOCUA
 
             for (int i = 0; i < 5; i++)
             {
-                _lampLabels[i].ForeColor = lights[i] == "red" ? Color.Red :
-                                           lights[i] == "green" ? Color.Lime : Color.Black;
-                _lampTimerLabels[i].Text = i == minIndex ? ledTimers[i] : string.Empty;
+                _lamps[i].LampColor = lights[i] == "red" ? Color.Red :
+                                       lights[i] == "green" ? Color.Lime : Color.Black;
+                _lamps[i].TimerText = ledTimers[i];
+                _lamps[i].ShowTimer = i == minIndex;
+                _lamps[i].Invalidate();
             }
         }
 
