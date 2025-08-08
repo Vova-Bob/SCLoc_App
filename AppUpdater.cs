@@ -105,7 +105,7 @@ namespace SCLOCUA
                 var response = await client.GetAsync(installerUrl);
                 response.EnsureSuccessStatusCode();
 
-                await using (var fs = new FileStream(tempInstallerPath, FileMode.Create, FileAccess.Write, FileShare.None, 8192, true))
+                using (var fs = new FileStream(tempInstallerPath, FileMode.Create, FileAccess.Write, FileShare.None, 8192, true))
                 {
                     await response.Content.CopyToAsync(fs);
                 }
