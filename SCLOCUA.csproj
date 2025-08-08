@@ -91,7 +91,9 @@
       <SubType>Form</SubType>
     </Compile>
     <Compile Include="HttpClientService.cs" />
-    <Compile Include="LampIndicator.cs" />
+    <Compile Include="LampIndicator.cs">
+      <SubType>Component</SubType>
+    </Compile>
     <Compile Include="Form1.cs">
       <SubType>Form</SubType>
     </Compile>
