@@ -70,7 +70,10 @@ namespace SCLOCUA
                 MessageBox.Show($"Файл звуку не знайдено: {soundFilePath}", "Помилка звуку", MessageBoxButtons.OK, MessageBoxIcon.Error);
 
             InitializeTray();
-            RegisterHotKey(this.Handle, HOTKEY_ID, MOD_CTRL | MOD_ALT, VK_F9);
+            if (RegisterHotKey(this.Handle, HOTKEY_ID, MOD_CTRL | MOD_ALT, VK_F9) == 0)
+            {
+                MessageBox.Show("Не вдалося зареєструвати гарячу клавішу", "Помилка", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
         }
 
         private void InitializeTray()

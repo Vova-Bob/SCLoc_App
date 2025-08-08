@@ -20,7 +20,7 @@ namespace SCLOCUA
         private readonly HttpClient httpClient;
         private ToolTip toolTip = new ToolTip(); // Створення об'єкта ToolTip
         private string selectedFolderPath = "";
-        private AntiAFK _antiAFK = new AntiAFK();
+        private AntiAFK _antiAFK;
 
         public Form1()
         {
@@ -72,10 +72,13 @@ namespace SCLOCUA
             button1.Click += SelectFolderButtonClick;
             button2.Click += UpdateLocalizationButtonClick;
             button3.Click += DeleteFilesButtonClick;
-            linkLabel1.LinkClicked += OpenLinkLabel1;
-            linkLabel2.LinkClicked += OpenLinkLabel2;
-            linkLabel3.LinkClicked += OpenLinkLabel3;
-            pictureBox1.Click += OpenPictureBoxLink;
+
+            AssignLink(linkLabel1, "https://docs.google.com/forms/d/e/1FAIpQLSdcNr1EdqUU6K63MVwKyDX7-twxDsCQDw8PfgmDSu_D1q9GRA/viewform");
+            AssignLink(linkLabel2, "https://discord.gg/QVV2G2aKzf");
+            AssignLink(linkLabel3, "https://github.com/Vova-Bob/SC_localization_UA");
+            AssignLink(linkLabel4, "https://docs.google.com/forms/d/e/1FAIpQLSfWRo63MgESTmzr-Cr0kPVkfgHSxZW2eZelTtGsw0htoMe_6A/viewform");
+            AssignLink(linkLabel5, "https://gitlab.com/valdeus/sc_localization_ua");
+            AssignLink(pictureBox1, "https://usf.42web.io");
         }
 
         // Обробник натискання кнопки вибору папки
@@ -113,61 +116,74 @@ namespace SCLOCUA
 
             try
             {
-                bool userCfgExists = File.Exists(Path.Combine(selectedFolderPath, UserCfgFileName));
-                bool globalIniExists = File.Exists(Path.Combine(selectedFolderPath, LocalizationPath, GlobalIniFileName));
-
-                if (!userCfgExists && checkBox1.Checked)
-                {
-                    CopyFile(UserCfgFileName, Path.Combine(selectedFolderPath, UserCfgFileName));
-                    toolStripProgressBar1.Value++;
-                    checkBox1.Checked = false;
-                }
-
-                string githubReleaseUrl = "";
-                if (selectedFolderPath.Contains("LIVE"))
-                {
-                    githubReleaseUrl = "https://github.com/Vova-Bob/SC_localization_UA/releases/latest/download/global.ini";
-                }
-                else if (selectedFolderPath.Contains("PTU") || selectedFolderPath.Contains("EPTU") || selectedFolderPath.Contains("4.0_PREVIEW"))
-                {
-                    var tagName = await GetLatestReleaseTagAsync();
-                    githubReleaseUrl = $"https://github.com/Vova-Bob/SC_localization_UA/releases/download/{tagName}/global.ini";
-                }
+                await EnsureUserCfgAsync();
+                string githubReleaseUrl = await GetGithubReleaseUrlAsync();
 
                 if (!string.IsNullOrEmpty(githubReleaseUrl))
                 {
                     string localFilePath = Path.Combine(selectedFolderPath, LocalizationPath, GlobalIniFileName);
-                    await DownloadFileAsync(githubReleaseUrl, localFilePath);  // Завантажуємо файл з GitHub
+                    await DownloadFileAsync(githubReleaseUrl, localFilePath);
                     toolStripProgressBar1.Value++;
                 }
 
-                string gistContent = File.ReadAllText(Path.Combine(selectedFolderPath, LocalizationPath, GlobalIniFileName));
-
-                if (DetectGithubGistUrl(gistContent))
-                {
-                    toolStripStatusLabel1.Text = "Знайдено URL до Github gist";
-                }
-                else
-                {
-                    button2.Text = "Оновити локалізацію";
-                    toolStripStatusLabel1.Text = userCfgExists || globalIniExists ? "Локалізацію оновлено" : "Локалізацію встановлено";
-                }
-
+                string gistContent = await ReadFileWithTimeoutAsync(Path.Combine(selectedFolderPath, LocalizationPath, GlobalIniFileName));
+                toolStripStatusLabel1.Text = DetectGithubGistUrl(gistContent) ? "Знайдено URL до Github gist" : "Готово";
             }
             catch (Exception ex)
             {
-                string errorMessage = $"Помилка при завантаженні/оновленні файлів: {ex.Message}. ";
-
-                // Коротке інформативне повідомлення
-                errorMessage += "Перевірте, чи вірно вказана папка для LIVE, PTU або EPTU.";
-
-                // Вивести повідомлення
-                ShowErrorMessage(errorMessage);
+                ShowErrorMessage($"Помилка при встановленні локалізації: {ex.Message}");
             }
             finally
             {
                 button2.Enabled = true;
             }
+        }
+
+        private async Task EnsureUserCfgAsync()
+        {
+            bool userCfgExists = File.Exists(Path.Combine(selectedFolderPath, UserCfgFileName));
+            if (!userCfgExists && checkBox1.Checked)
+            {
+                await CopyFileAsync(UserCfgFileName, Path.Combine(selectedFolderPath, UserCfgFileName));
+                toolStripProgressBar1.Value++;
+                checkBox1.Checked = false;
+            }
+        }
+
+        private async Task<string> GetGithubReleaseUrlAsync()
+        {
+            if (selectedFolderPath.Contains("LIVE"))
+            {
+                return "https://github.com/Vova-Bob/SC_localization_UA/releases/latest/download/global.ini";
+            }
+            if (selectedFolderPath.Contains("PTU") || selectedFolderPath.Contains("EPTU") || selectedFolderPath.Contains("4.0_PREVIEW"))
+            {
+                var tagName = await GetLatestReleaseTagAsync();
+                return $"https://github.com/Vova-Bob/SC_localization_UA/releases/download/{tagName}/global.ini";
+            }
+            return string.Empty;
+        }
+
+        private async Task<string> ReadFileWithTimeoutAsync(string path, int timeout = 5000)
+        {
+            var task = File.ReadAllTextAsync(path);
+            if (await Task.WhenAny(task, Task.Delay(timeout)) != task)
+                throw new TimeoutException("Читання файлу перевищило час очікування");
+            return await task;
+        }
+
+        private async Task CopyFileAsync(string sourceFileName, string destinationPath, int timeout = 5000)
+        {
+            var task = Task.Run(() => File.Copy(sourceFileName, destinationPath, true));
+            if (await Task.WhenAny(task, Task.Delay(timeout)) != task)
+                throw new TimeoutException("Копіювання файлу перевищило час очікування");
+        }
+
+        private async Task DeleteFileAsync(string path, int timeout = 5000)
+        {
+            var task = Task.Run(() => { if (File.Exists(path)) File.Delete(path); });
+            if (await Task.WhenAny(task, Task.Delay(timeout)) != task)
+                throw new TimeoutException("Видалення файлу перевищило час очікування");
         }
 
         private async Task<string> GetLatestReleaseTagAsync()
@@ -209,11 +225,6 @@ namespace SCLOCUA
             return match.Success;
         }
 
-        private void CopyFile(string sourceFileName, string destinationPath)
-        {
-            File.Copy(sourceFileName, destinationPath, true);
-        }
-
         private async Task DownloadFileAsync(string url, string filePath)
         {
             try
@@ -242,7 +253,7 @@ namespace SCLOCUA
             }
         }
 
-        private void DeleteFilesButtonClick(object sender, EventArgs e)
+        private async void DeleteFilesButtonClick(object sender, EventArgs e)
         {
             if (string.IsNullOrWhiteSpace(selectedFolderPath))
                 return;
@@ -256,19 +267,14 @@ namespace SCLOCUA
                 {
                     if (userCfgExists)
                     {
-                        File.Delete(Path.Combine(selectedFolderPath, UserCfgFileName));
+                        await DeleteFileAsync(Path.Combine(selectedFolderPath, UserCfgFileName));
                     }
                     if (globalIniExists)
                     {
-                        File.Delete(Path.Combine(selectedFolderPath, LocalizationPath, GlobalIniFileName));
+                        await DeleteFileAsync(Path.Combine(selectedFolderPath, LocalizationPath, GlobalIniFileName));
                     }
 
-                    int initialValue = toolStripProgressBar1.Value;
-
-                    for (int i = initialValue; i >= 0; i--)
-                    {
-                        toolStripProgressBar1.Value = i;
-                    }
+                    toolStripProgressBar1.Value = 0;
 
                     toolStripStatusLabel1.Text = "Файли видалено";
                     button2.Text = "Встановити локалізацію";
@@ -296,38 +302,37 @@ namespace SCLOCUA
             MessageBox.Show(message, "Помилка", MessageBoxButtons.OK, MessageBoxIcon.Error);
         }
 
-        private void OpenLinkLabel1(object sender, LinkLabelLinkClickedEventArgs e)
+        private void AssignLink(Control control, string url)
         {
-            OpenLink("https://docs.google.com/forms/d/e/1FAIpQLSdcNr1EdqUU6K63MVwKyDX7-twxDsCQDw8PfgmDSu_D1q9GRA/viewform");
+            control.Tag = url;
+            if (control is LinkLabel link)
+            {
+                link.LinkClicked += OpenLink;
+            }
+            else
+            {
+                control.Click += OpenLink;
+            }
         }
 
-        private void OpenLinkLabel2(object sender, LinkLabelLinkClickedEventArgs e)
+        private void OpenLink(object sender, EventArgs e)
         {
-            OpenLink("https://discord.gg/QVV2G2aKzf");
+            if (sender is Control ctrl && ctrl.Tag is string url)
+            {
+                OpenUrl(url);
+            }
         }
 
-        private void OpenLinkLabel3(object sender, LinkLabelLinkClickedEventArgs e)
+        private void OpenUrl(string url)
         {
-            OpenLink("https://github.com/Vova-Bob/SC_localization_UA");
-        }
-
-        private void linkLabel4_LinkClicked(object sender, LinkLabelLinkClickedEventArgs e)
-        {
-            OpenLink("https://docs.google.com/forms/d/e/1FAIpQLSfWRo63MgESTmzr-Cr0kPVkfgHSxZW2eZelTtGsw0htoMe_6A/viewform");
-        }
-
-        private void linkLabel5_LinkClicked(object sender, LinkLabelLinkClickedEventArgs e)
-        {
-            OpenLink("https://gitlab.com/valdeus/sc_localization_ua");
-        }
-        private void OpenPictureBoxLink(object sender, EventArgs e)
-        {
-            OpenLink("https://usf.42web.io");
-        }
-
-        private void OpenLink(string url)
-        {
-            System.Diagnostics.Process.Start(url);
+            if (Uri.IsWellFormedUriString(url, UriKind.Absolute))
+            {
+                System.Diagnostics.Process.Start(url);
+            }
+            else
+            {
+                ShowErrorMessage("Некоректне посилання");
+            }
         }
 
         private async Task CheckForNewReleasesAsync()
@@ -394,7 +399,7 @@ namespace SCLOCUA
         }
         private void pictureBox2_Click(object sender, EventArgs e)
         {
-            OpenLink("https://send.monobank.ua/jar/44HXkQkorg");
+            OpenUrl("https://send.monobank.ua/jar/44HXkQkorg");
         }
 
         // Обробник натискання кнопки Wiki

@@ -173,11 +173,6 @@ namespace SCLOCUA
         private static LowLevelMouseProc _mouseProc = MouseCallback;
         private static IntPtr _mouseHookID = IntPtr.Zero;
 
-        static HookManager()
-        {
-            _keyboardHookID = SetHook(_keyboardProc, WH_KEYBOARD_LL);
-            _mouseHookID = SetHook(_mouseProc, WH_MOUSE_LL);
-        }
 
         public static void Unhook()
         {
