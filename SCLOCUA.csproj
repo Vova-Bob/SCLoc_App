@@ -85,6 +85,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="AntiAFK.cs" />
+    <Compile Include="AppConfig.cs" />
     <Compile Include="AppUpdater.cs" />
     <Compile Include="HttpClientService.cs" />
     <Compile Include="Form1.cs">
