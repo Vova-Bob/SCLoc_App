@@ -90,6 +90,7 @@
     <Compile Include="HangarTimerOverlay.cs">
       <SubType>Form</SubType>
     </Compile>
+    <Compile Include="HangarLampPanel.cs" />
     <Compile Include="HttpClientService.cs" />
     <Compile Include="Form1.cs">
       <SubType>Form</SubType>

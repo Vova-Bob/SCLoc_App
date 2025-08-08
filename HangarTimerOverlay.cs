@@ -34,6 +34,7 @@ namespace SCLOCUA
 
         private DateTime _cycleStart;
         private bool _syncError;
+        private bool _visibleState = true;
 
         public HangarTimerOverlay()
         {
@@ -320,6 +321,28 @@ namespace SCLOCUA
             base.WndProc(ref m);
         }
         #endregion
+
+        public void ToggleVisibility()
+        {
+            if (InvokeRequired)
+            {
+                Invoke((Action)ToggleVisibility);
+                return;
+            }
+
+            _visibleState = !_visibleState;
+            if (_visibleState)
+            {
+                Show();
+                BringToFront();
+                Enabled = true;
+            }
+            else
+            {
+                Hide();
+                Enabled = false;
+            }
+        }
 
         protected override void OnFormClosed(FormClosedEventArgs e)
         {
