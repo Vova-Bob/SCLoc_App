@@ -44,22 +44,21 @@ namespace SCLOCUA
             BackColor = Color.Black;
             Opacity = 0.85;
             StartPosition = FormStartPosition.Manual;
-            Width = 700;
+            Width = 420;
             Height = 200;
 
-            // Status label
+            // Status label (Ukrainian text)
             _statusLabel = new Label
             {
                 Dock = DockStyle.Top,
                 Height = 40,
                 Font = new Font("Segoe UI", 20, FontStyle.Bold),
-                ForeColor = Color.Gray,
-                TextAlign = ContentAlignment.MiddleCenter,
-                Text = "Статус ангару невідомий"
+                ForeColor = Color.Red,
+                TextAlign = ContentAlignment.MiddleCenter
             };
             Controls.Add(_statusLabel);
 
-            // Phase timer label (shows prefix + HH:MM:SS)
+            // Phase timer label
             _phaseTimerLabel = new Label
             {
                 Dock = DockStyle.Top,
@@ -186,48 +185,42 @@ namespace SCLOCUA
             int elapsed = (int)Math.Floor((now - _cycleStart).TotalSeconds);
             int cyclePos = ((elapsed % TOTAL_CYCLE) + TOTAL_CYCLE) % TOTAL_CYCLE;
 
-            string statusMessage;
-            string timerMessage;
-            Color statusColor;
+            string status;
             int phaseRemaining;
             string[] lights = new string[5];
 
             if (cyclePos < RED_PHASE)
             {
-                statusMessage = "Ангар зачинено";
+                status = "ЗАКРИТО";
                 int timeSinceStart = cyclePos;
                 int interval = RED_PHASE / 5;
                 for (int i = 0; i < 5; i++)
                     lights[i] = timeSinceStart >= (i + 1) * interval ? "green" : "red";
                 phaseRemaining = RED_PHASE - timeSinceStart;
-                timerMessage = $"Відкриття через {FormatTime(phaseRemaining)}";
-                statusColor = Color.Red;
+                _statusLabel.ForeColor = Color.Red;
             }
             else if (cyclePos < RED_PHASE + GREEN_PHASE)
             {
-                statusMessage = "Ангар відкрито";
+                status = "ВІДКРИТО";
                 int timeSinceStart = cyclePos - RED_PHASE;
                 int interval = GREEN_PHASE / 5;
                 for (int i = 0; i < 5; i++)
                     lights[i] = timeSinceStart >= (5 - i) * interval ? "black" : "green";
                 phaseRemaining = GREEN_PHASE - timeSinceStart;
-                timerMessage = $"Перезапуск через {FormatTime(phaseRemaining)}";
-                statusColor = Color.Lime;
+                _statusLabel.ForeColor = Color.Lime;
             }
             else
             {
-                statusMessage = "Ангар перезавантажується";
+                status = "СКИДАННЯ";
                 for (int i = 0; i < 5; i++)
                     lights[i] = "black";
                 int timeSinceStart = cyclePos - RED_PHASE - GREEN_PHASE;
                 phaseRemaining = BLACK_PHASE - timeSinceStart;
-                timerMessage = $"Перезапуск через {FormatTime(phaseRemaining)}";
-                statusColor = Color.Goldenrod;
+                _statusLabel.ForeColor = Color.Gray;
             }
 
-            _statusLabel.Text = statusMessage;
-            _statusLabel.ForeColor = statusColor;
-            _phaseTimerLabel.Text = timerMessage;
+            _statusLabel.Text = status;
+            _phaseTimerLabel.Text = FormatTime(phaseRemaining);
 
             string[] ledTimers = new string[5];
             int?[] timerValues = new int?[5];
@@ -235,13 +228,13 @@ namespace SCLOCUA
             for (int i = 0; i < 5; i++)
             {
                 int? secondsLeft = null;
-                if (statusMessage == "Ангар зачинено" && lights[i] == "red")
+                if (status == "ЗАКРИТО" && lights[i] == "red")
                 {
                     int target = (i + 1) * (RED_PHASE / 5);
                     int timeLeft = target - cycleElapsed;
                     if (timeLeft > 0) secondsLeft = timeLeft;
                 }
-                if (statusMessage == "Ангар відкрито" && lights[i] == "green")
+                if (status == "ВІДКРИТО" && lights[i] == "green")
                 {
                     int timeSinceGreen = cycleElapsed - RED_PHASE;
                     int target = (5 - i) * (GREEN_PHASE / 5);
