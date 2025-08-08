@@ -474,9 +474,6 @@ namespace SCLOCUA
         // Кнопка KillFeed
         private killFeed overlayForm;
 
-        // Кнопка ExHangar
-        private HangarTimerOverlay hangarOverlay;
-
         private void buttonkillfeed_Click(object sender, EventArgs e)
         {
             if (overlayForm == null || overlayForm.IsDisposed)
@@ -487,23 +484,6 @@ namespace SCLOCUA
             else
             {
                 overlayForm.ToggleVisibility();
-            }
-        }
-
-        private void buttonExHangar_Click(object sender, EventArgs e)
-        {
-            if (hangarOverlay == null || hangarOverlay.IsDisposed)
-            {
-                hangarOverlay = new HangarTimerOverlay();
-                hangarOverlay.Show();
-            }
-            else if (hangarOverlay.Visible)
-            {
-                hangarOverlay.Hide();
-            }
-            else
-            {
-                hangarOverlay.Show();
             }
         }
     }
