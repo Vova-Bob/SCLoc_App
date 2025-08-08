@@ -19,19 +19,12 @@ namespace SCLOCUA
         public WikiForm()
         {
             InitializeComponent();
-            InitializeHttpClient();
+            client = HttpClientService.Client;
             button1.Click += button1_Click;
             this.Load += WikiForm_Load;
             textBox1.KeyDown += textBox1_KeyDown;
             textBox1.MouseWheel += textBox1_MouseWheel; // Додано обробник прокручування миші для textBox1
             richTextBox1.MouseWheel += richTextBox1_MouseWheel; // Додано обробник прокручування миші для richTextBox1
-        }
-
-        // Ініціалізація HTTP клієнта
-        private void InitializeHttpClient()
-        {
-            client = new HttpClient();
-            client.DefaultRequestHeaders.Add("User-Agent", "SCLOCUA");
         }
 
         private async void WikiForm_Load(object sender, EventArgs e)

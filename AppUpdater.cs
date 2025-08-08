@@ -12,7 +12,6 @@ namespace SCLOCUA
     internal class AppUpdater
     {
         private const string GitHubApiUrl = "https://api.github.com/repos/Vova-Bob/SCLoc_App/releases/latest";
-        private const string UserAgent = "SCLocAppUpdater"; // Для GitHub API, щоб не заблокували запит
 
         // Метод для перевірки наявності оновлень
         public async Task CheckForUpdatesAsync()
@@ -78,22 +77,19 @@ namespace SCLOCUA
         {
             try
             {
-                using (var client = new HttpClient())
-                {
-                    client.DefaultRequestHeaders.Add("User-Agent", UserAgent);
-                    var response = await client.GetStringAsync(GitHubApiUrl);
+                var client = HttpClientService.Client;
+                var response = await client.GetStringAsync(GitHubApiUrl);
 
-                    // Лог для перевірки отриманих даних
-                    Console.WriteLine("Отримано дані про реліз: " + response);
+                // Лог для перевірки отриманих даних
+                Console.WriteLine("Отримано дані про реліз: " + response);
 
-                    // Парсимо JSON відповідь
-                    var jsonResponse = JObject.Parse(response);
-                    string latestVersion = jsonResponse["tag_name"].ToString(); // Наприклад, v1.5.4.6
-                    string downloadUrl = jsonResponse["assets"][0]["browser_download_url"].ToString(); // URL для завантаження інсталятора
-                    string releaseNotes = jsonResponse["body"].ToString(); // Опис релізу
+                // Парсимо JSON відповідь
+                var jsonResponse = JObject.Parse(response);
+                string latestVersion = jsonResponse["tag_name"].ToString(); // Наприклад, v1.5.4.6
+                string downloadUrl = jsonResponse["assets"][0]["browser_download_url"].ToString(); // URL для завантаження інсталятора
+                string releaseNotes = jsonResponse["body"].ToString(); // Опис релізу
 
-                    return $"{latestVersion},{downloadUrl},{releaseNotes}";
-                }
+                return $"{latestVersion},{downloadUrl},{releaseNotes}";
             }
             catch (Exception ex)
             {
