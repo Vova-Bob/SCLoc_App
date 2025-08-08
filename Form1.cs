@@ -17,7 +17,7 @@ namespace SCLOCUA
         private const string GithubGistUrlPattern = @"https://gist.github.com/\w+/\w+";
         private const string GithubReleasesApiUrl = "https://api.github.com/repos/Vova-Bob/SC_localization_UA/releases";  // API для отримання релізів
         private WikiForm wikiForm = null; // Оголошуємо змінну для форми
-        private readonly HttpClient httpClient = new HttpClient();
+        private readonly HttpClient httpClient;
         private ToolTip toolTip = new ToolTip(); // Створення об'єкта ToolTip
         private string selectedFolderPath = "";
         private AntiAFK _antiAFK = new AntiAFK();
@@ -25,6 +25,13 @@ namespace SCLOCUA
         public Form1()
         {
             InitializeComponent();
+
+            httpClient = new HttpClient();
+            if (!httpClient.DefaultRequestHeaders.Contains("User-Agent"))
+            {
+                httpClient.DefaultRequestHeaders.Add("User-Agent", "SCLOCUA");
+            }
+
             this.MaximizeBox = false;
             this.Icon = Properties.Resources.Icon;
             selectedFolderPath = Properties.Settings.Default.LastSelectedFolderPath;
@@ -171,9 +178,6 @@ namespace SCLOCUA
         {
             try
             {
-                // Додаємо заголовок User-Agent
-                httpClient.DefaultRequestHeaders.Add("User-Agent", "SCLOCUA");
-
                 // Оновлений запит для отримання лише пререлізів
                 HttpResponseMessage response = await httpClient.GetAsync(GithubReleasesApiUrl + "?prerelease=true");
                 response.EnsureSuccessStatusCode();
@@ -334,8 +338,6 @@ namespace SCLOCUA
         {
             try
             {
-                httpClient.DefaultRequestHeaders.Add("User-Agent", "SCLOCUA");
-
                 // Отримуємо останні релізи (включаючи пререлізи)
                 HttpResponseMessage response = await httpClient.GetAsync(GithubReleasesApiUrl);
                 response.EnsureSuccessStatusCode();
