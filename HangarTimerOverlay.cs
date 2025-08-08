@@ -1,20 +1,18 @@
 using System;
 using System.Drawing;
-using System.Net.Http;
+using System.Globalization;
+using System.Runtime.InteropServices;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using System.Windows.Forms;
-using System.Runtime.InteropServices;
-using System.Globalization;
 
 namespace SCLOCUA
 {
     /// <summary>
-    /// Borderless always-on-top overlay window that mirrors the timer logic
-    /// from the executive hangar web page. It synchronizes with the server
-    /// using the timestamp stored in https://exec.xyxyll.com/app.js and
-    /// displays the current phase, phase timer and indicator lamps with the
-    /// remaining time until the next lamp switches.
+    /// Borderless always-on-top overlay window that mirrors the timer logic of
+    /// https://ex-hangar.scloc.pp.ua/. The overlay uses only standard WinForms
+    /// controls and Unicode emoji to replicate the lamp indicators without any
+    /// custom drawing.
     /// </summary>
     public class HangarTimerOverlay : Form
     {
@@ -26,9 +24,10 @@ namespace SCLOCUA
 
         private readonly Label _statusLabel;
         private readonly Label _phaseTimerLabel;
-        private readonly LampIndicator[] _lamps = new LampIndicator[5];
+        private readonly TableLayoutPanel _lampTable;
+        private readonly Label[] _lampLabels = new Label[5];
+        private readonly Label[] _timerLabels = new Label[5];
         private readonly Timer _updateTimer;
-        private readonly ToolTip _opacityTip = new ToolTip();
 
         private DateTime _cycleStart;
         private bool _syncError;
@@ -40,10 +39,10 @@ namespace SCLOCUA
             TopMost = true;
             ShowInTaskbar = false;
             BackColor = Color.Black;
-            Opacity = 0.8;
+            Opacity = 0.85;
             StartPosition = FormStartPosition.Manual;
             Width = 420;
-            Height = 180;
+            Height = 200;
 
             // Status label
             _statusLabel = new Label
@@ -62,84 +61,88 @@ namespace SCLOCUA
                 Dock = DockStyle.Top,
                 Height = 50,
                 TextAlign = ContentAlignment.MiddleCenter,
-                Font = new Font("Consolas", 32, FontStyle.Bold),
+                Font = new Font("Consolas", 28, FontStyle.Bold),
                 ForeColor = Color.White
             };
             Controls.Add(_phaseTimerLabel);
 
-            // Lamps panel
-            var panel = new Panel
+            // Panel for lamps
+            var lampPanel = new Panel
             {
                 Dock = DockStyle.Fill,
                 BackColor = Color.Transparent
             };
-            Controls.Add(panel);
+            Controls.Add(lampPanel);
 
-            const int lampDiameter = 40;
-            const int lampSpacing = 20;
-            const int lampHeight = 60;
+            // TableLayout for lamps and timers
+            _lampTable = new TableLayoutPanel
+            {
+                ColumnCount = 5,
+                RowCount = 2,
+                AutoSize = true,
+                AutoSizeMode = AutoSizeMode.GrowAndShrink,
+                Dock = DockStyle.Top
+            };
+            _lampTable.RowStyles.Add(new RowStyle(SizeType.Absolute, 40));
+            _lampTable.RowStyles.Add(new RowStyle(SizeType.Absolute, 20));
+            for (int i = 0; i < 5; i++)
+                _lampTable.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 20f));
 
             for (int i = 0; i < 5; i++)
             {
-                var lamp = new LampIndicator
+                var lamp = new Label
                 {
-                    Size = new Size(lampDiameter, lampHeight),
-                    LampColor = Color.Black
+                    Text = "⚫",
+                    Dock = DockStyle.Fill,
+                    TextAlign = ContentAlignment.MiddleCenter,
+                    Font = new Font("Segoe UI Emoji", 32)
                 };
-                _lamps[i] = lamp;
-                panel.Controls.Add(lamp);
-            }
+                _lampLabels[i] = lamp;
+                _lampTable.Controls.Add(lamp, i, 0);
 
-            void LayoutLamps()
-            {
-                int totalWidth = _lamps.Length * lampDiameter + (_lamps.Length - 1) * lampSpacing;
-                int startX = (panel.ClientSize.Width - totalWidth) / 2;
-                int y = (panel.ClientSize.Height - lampHeight) / 2;
-                for (int i = 0; i < _lamps.Length; i++)
+                var timer = new Label
                 {
-                    _lamps[i].Location = new Point(startX + i * (lampDiameter + lampSpacing), y);
-                }
+                    Dock = DockStyle.Fill,
+                    TextAlign = ContentAlignment.TopCenter,
+                    Font = new Font("Consolas", 10f),
+                    ForeColor = Color.LightGray,
+                    Visible = false
+                };
+                _timerLabels[i] = timer;
+                _lampTable.Controls.Add(timer, i, 1);
             }
 
-            panel.Resize += (s, e) => LayoutLamps();
-            LayoutLamps();
+            lampPanel.Controls.Add(_lampTable);
+            lampPanel.Resize += (s, e) => CenterLampTable(lampPanel);
+            CenterLampTable(lampPanel);
 
-            // Update timer
             _updateTimer = new Timer { Interval = 1000 };
-            _updateTimer.Tick += UpdateTimerTick;
+            _updateTimer.Tick += (s, e) => UpdateDisplay();
 
-            Load += HangarTimerOverlay_Load;
+            Load += async (s, e) => await InitializeAsync();
         }
 
-        private async void HangarTimerOverlay_Load(object sender, EventArgs e)
+        private void CenterLampTable(Panel panel)
         {
-            await InitializeAsync();
+            _lampTable.Left = (panel.ClientSize.Width - _lampTable.Width) / 2;
+            _lampTable.Top = (panel.ClientSize.Height - _lampTable.Height) / 2;
         }
 
-        private void UpdateTimerTick(object sender, EventArgs e) => UpdateDisplay();
-
-        /// <summary>
-        /// Fetches the global cycle start time from the remote JavaScript file
-        /// and registers global hotkeys.
-        /// </summary>
         private async Task InitializeAsync()
         {
             if (!await FetchCycleStartAsync())
             {
                 _syncError = true;
-                _statusLabel.Text = "SYNC ERROR";
+                _statusLabel.Text = "Помилка синхронізації";
                 _statusLabel.ForeColor = Color.Red;
-                if (string.IsNullOrEmpty(_phaseTimerLabel.Text))
-                    _phaseTimerLabel.Text = "unable to fetch";
+                _phaseTimerLabel.Text = "не вдалось отримати час";
             }
             else
             {
-                RegisterHotKeys();
                 UpdateDisplay();
                 _updateTimer.Start();
             }
 
-            // Enable click-through so the overlay does not intercept mouse events
             int exStyle = GetWindowLong(Handle, GWL_EXSTYLE);
             SetWindowLong(Handle, GWL_EXSTYLE, exStyle | WS_EX_TRANSPARENT | WS_EX_TOOLWINDOW);
         }
@@ -153,23 +156,15 @@ namespace SCLOCUA
                 var match = Regex.Match(js, "INITIAL_OPEN_TIME\\s*=\\s*new Date\\('([^']+)'\\)");
                 if (!match.Success)
                     return false;
-                string value = match.Groups[1].Value;
-                _cycleStart = DateTime.ParseExact(value, "yyyy-MM-ddTHH:mm:ss.fffK", CultureInfo.InvariantCulture, DateTimeStyles.AdjustToUniversal);
+                _cycleStart = DateTime.ParseExact(match.Groups[1].Value,
+                    "yyyy-MM-ddTHH:mm:ss.fffK", CultureInfo.InvariantCulture,
+                    DateTimeStyles.AdjustToUniversal);
                 return true;
-            }
-            catch (TaskCanceledException)
-            {
-                _phaseTimerLabel.Text = "request timed out";
-            }
-            catch (FormatException)
-            {
-                _phaseTimerLabel.Text = "invalid date format";
             }
             catch
             {
-                _phaseTimerLabel.Text = "fetch error";
+                return false;
             }
-            return false;
         }
 
         private void UpdateDisplay()
@@ -178,75 +173,75 @@ namespace SCLOCUA
                 return;
 
             var now = DateTime.UtcNow;
-            int elapsed = (int)Math.Floor((now - _cycleStart).TotalSeconds);
-            int cyclePos = ((elapsed % TOTAL_CYCLE) + TOTAL_CYCLE) % TOTAL_CYCLE; // handle negative
+            int elapsed = (int)(now - _cycleStart).TotalSeconds;
+            int cyclePos = ((elapsed % TOTAL_CYCLE) + TOTAL_CYCLE) % TOTAL_CYCLE;
 
             string status;
+            string timerPrefix;
             int phaseRemaining;
             string[] lights = new string[5];
 
             if (cyclePos < RED_PHASE)
             {
-                status = "closed";
+                status = "Ангар зачинено";
+                timerPrefix = "Відкриття через ";
                 int timeSinceStart = cyclePos;
                 int interval = RED_PHASE / 5;
                 for (int i = 0; i < 5; i++)
-                    lights[i] = timeSinceStart >= (i + 1) * interval ? "green" : "red";
+                    lights[i] = timeSinceStart >= (i + 1) * interval ? "🟢" : "🔴";
                 phaseRemaining = RED_PHASE - timeSinceStart;
                 _statusLabel.ForeColor = Color.Red;
             }
             else if (cyclePos < RED_PHASE + GREEN_PHASE)
             {
-                status = "open";
+                status = "Ангар відкрито";
+                timerPrefix = "Перезапуск через ";
                 int timeSinceStart = cyclePos - RED_PHASE;
                 int interval = GREEN_PHASE / 5;
                 for (int i = 0; i < 5; i++)
-                    lights[i] = timeSinceStart >= (5 - i) * interval ? "black" : "green";
+                    lights[i] = timeSinceStart >= (5 - i) * interval ? "⚫" : "🟢";
                 phaseRemaining = GREEN_PHASE - timeSinceStart;
                 _statusLabel.ForeColor = Color.Lime;
             }
             else
             {
-                status = "reset";
-                for (int i = 0; i < 5; i++) lights[i] = "black";
+                status = "Перезапуск";
+                timerPrefix = "Відкриття через ";
+                for (int i = 0; i < 5; i++)
+                    lights[i] = "⚫";
                 int timeSinceStart = cyclePos - RED_PHASE - GREEN_PHASE;
                 phaseRemaining = BLACK_PHASE - timeSinceStart;
                 _statusLabel.ForeColor = Color.Gray;
             }
 
-            _statusLabel.Text = status.ToUpperInvariant();
-            _phaseTimerLabel.Text = FormatTime(phaseRemaining);
+            _statusLabel.Text = status;
+            _phaseTimerLabel.Text = timerPrefix + FormatTime(phaseRemaining);
 
-            // Determine timer under lamps
-            string[] ledTimers = new string[5];
             int?[] timerValues = new int?[5];
-            int cycleElapsed = cyclePos;
             for (int i = 0; i < 5; i++)
             {
                 int? secondsLeft = null;
-                if (status == "closed" && lights[i] == "red")
+                if (cyclePos < RED_PHASE && lights[i] == "🔴")
                 {
                     int target = (i + 1) * (RED_PHASE / 5);
-                    int timeLeft = target - cycleElapsed;
-                    if (timeLeft > 0) secondsLeft = timeLeft;
+                    secondsLeft = target - cyclePos;
                 }
-                if (status == "open" && lights[i] == "green")
+                else if (cyclePos < RED_PHASE + GREEN_PHASE && lights[i] == "🟢")
                 {
-                    int timeSinceGreen = cycleElapsed - RED_PHASE;
+                    int timeSinceGreen = cyclePos - RED_PHASE;
                     int target = (5 - i) * (GREEN_PHASE / 5);
-                    int timeLeft = target - timeSinceGreen;
-                    if (timeLeft > 0) secondsLeft = timeLeft;
+                    secondsLeft = target - timeSinceGreen;
                 }
-                ledTimers[i] = secondsLeft.HasValue ? FormatTime(secondsLeft.Value).Substring(3) : string.Empty;
-                timerValues[i] = secondsLeft;
+                timerValues[i] = secondsLeft > 0 ? secondsLeft : null;
             }
 
             int minIndex = -1;
             int? minVal = null;
-            for (int i = 0; i < timerValues.Length; i++)
+            for (int i = 0; i < 5; i++)
             {
                 var v = timerValues[i];
-                if (v == null) continue;
+                if (v == null)
+                    continue;
                 if (minVal == null || v < minVal)
                 {
                     minVal = v;
@@ -256,11 +251,16 @@ namespace SCLOCUA
 
             for (int i = 0; i < 5; i++)
             {
-                _lamps[i].LampColor = lights[i] == "red" ? Color.Red :
-                                       lights[i] == "green" ? Color.Lime : Color.Black;
-                _lamps[i].TimerText = ledTimers[i];
-                _lamps[i].ShowTimer = i == minIndex;
-                _lamps[i].Invalidate();
+                _lampLabels[i].Text = lights[i];
+                if (i == minIndex && minVal.HasValue)
+                {
+                    _timerLabels[i].Text = FormatTime(minVal.Value).Substring(3);
+                    _timerLabels[i].Visible = true;
+                }
+                else
+                {
+                    _timerLabels[i].Visible = false;
+                }
             }
         }
 
@@ -272,86 +272,10 @@ namespace SCLOCUA
             return $"{h:D2}:{m:D2}:{s:D2}";
         }
 
-        #region Hotkeys
-        private void RegisterHotKeys()
-        {
-            RegisterHotKey(Handle, 1, MOD_CONTROL | MOD_ALT, (int)Keys.Up);
-            RegisterHotKey(Handle, 2, MOD_CONTROL | MOD_ALT, (int)Keys.Down);
-            RegisterHotKey(Handle, 3, MOD_CONTROL | MOD_ALT, (int)Keys.Left);
-            RegisterHotKey(Handle, 4, MOD_CONTROL | MOD_ALT, (int)Keys.Right);
-            RegisterHotKey(Handle, 5, MOD_CONTROL | MOD_ALT, (int)Keys.Oemplus);
-            RegisterHotKey(Handle, 6, MOD_CONTROL | MOD_ALT, (int)Keys.OemMinus);
-            RegisterHotKey(Handle, 7, MOD_CONTROL | MOD_ALT, (int)Keys.Add);
-            RegisterHotKey(Handle, 8, MOD_CONTROL | MOD_ALT, (int)Keys.Subtract);
-        }
-
-        private void UnregisterHotKeys()
-        {
-            for (int i = 1; i <= 8; i++)
-                UnregisterHotKey(Handle, i);
-        }
-
-        protected override void WndProc(ref Message m)
-        {
-            if (m.Msg == WM_HOTKEY)
-            {
-                int id = m.WParam.ToInt32();
-                switch (id)
-                {
-                    case 1: Top -= 10; break;
-                    case 2: Top += 10; break;
-                    case 3: Left -= 10; break;
-                    case 4: Left += 10; break;
-                    case 5:
-                    case 7:
-                        Opacity = Math.Min(1.0, Opacity + 0.1);
-                        _opacityTip.Show($"Opacity: {Opacity:F1}", this, 1000);
-                        break;
-                    case 6:
-                    case 8:
-                        Opacity = Math.Max(0.2, Opacity - 0.1);
-                        _opacityTip.Show($"Opacity: {Opacity:F1}", this, 1000);
-                        break;
-                }
-            }
-            base.WndProc(ref m);
-        }
-        #endregion
-
-        protected override void OnFormClosed(FormClosedEventArgs e)
-        {
-            _updateTimer.Stop();
-            _updateTimer.Tick -= UpdateTimerTick;
-            _updateTimer.Dispose();
-            Load -= HangarTimerOverlay_Load;
-            _opacityTip.Dispose();
-            UnregisterHotKeys();
-            base.OnFormClosed(e);
-        }
-
-        protected override bool ProcessCmdKey(ref Message msg, Keys keyData)
-        {
-            if (keyData == Keys.Escape)
-            {
-                Close();
-                return true;
-            }
-            return base.ProcessCmdKey(ref msg, keyData);
-        }
-
-        // WinAPI
-        private const int WM_HOTKEY = 0x0312;
-        private const uint MOD_ALT = 0x1;
-        private const uint MOD_CONTROL = 0x2;
+        // WinAPI for click-through window
         private const int GWL_EXSTYLE = -20;
         private const int WS_EX_TRANSPARENT = 0x20;
         private const int WS_EX_TOOLWINDOW = 0x80;
-
-        [DllImport("user32.dll")]
-        private static extern bool RegisterHotKey(IntPtr hWnd, int id, uint fsModifiers, int vk);
-
-        [DllImport("user32.dll")]
-        private static extern bool UnregisterHotKey(IntPtr hWnd, int id);
 
         [DllImport("user32.dll")]
         private static extern int GetWindowLong(IntPtr hWnd, int nIndex);
@@ -360,3 +284,4 @@ namespace SCLOCUA
         private static extern int SetWindowLong(IntPtr hWnd, int nIndex, int dwNewLong);
     }
 }
+
