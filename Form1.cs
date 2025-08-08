@@ -226,7 +226,10 @@ namespace SCLOCUA
                     Directory.CreateDirectory(directoryPath);
                 }
 
-                await File.WriteAllBytesAsync(filePath, fileData);
+                using (var fs = new FileStream(filePath, FileMode.Create, FileAccess.Write, FileShare.None, 8192, true))
+                {
+                    await fs.WriteAsync(fileData, 0, fileData.Length);
+                }
 
             }
             catch (HttpRequestException ex)

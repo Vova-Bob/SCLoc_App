@@ -259,8 +259,21 @@ namespace SCLOCUA
             newLabel.MouseEnter += (s, e) => Cursor.Hide();
             newLabel.MouseLeave += (s, e) => Cursor.Show();
 
-            var toRemove = this.Controls.OfType<Label>().Where(lbl => lbl.Bottom < 0).ToList();
-            toRemove.ForEach(lbl => { this.Controls.Remove(lbl); lbl.Dispose(); });
+            var toRemove = new System.Collections.Generic.List<Label>();
+            foreach (Control control in this.Controls)
+            {
+                var lbl = control as Label;
+                if (lbl != null && lbl.Bottom < 0)
+                {
+                    toRemove.Add(lbl);
+                }
+            }
+
+            foreach (var lbl in toRemove)
+            {
+                this.Controls.Remove(lbl);
+                lbl.Dispose();
+            }
         }
 
         private void PlayKillSound()
@@ -316,9 +329,11 @@ namespace SCLOCUA
             int lineHeight = (int)(20 * scaleFactor);
             int y = this.ClientSize.Height - lineHeight;
 
-            foreach (Control c in this.Controls.Cast<Control>().Reverse())
+            for (int i = this.Controls.Count - 1; i >= 0; i--)
             {
-                if (c is Label lbl)
+                Control c = this.Controls[i];
+                Label lbl = c as Label;
+                if (lbl != null)
                 {
                     lbl.Font = new Font("Consolas", 10 * scaleFactor);
                     lbl.Top = y;
