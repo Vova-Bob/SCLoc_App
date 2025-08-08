@@ -32,7 +32,7 @@ namespace SCLOCUA
         private readonly Timer _updateTimer = new Timer { Interval = 1000 };
         private readonly ToolTip _opacityTip = new ToolTip();
 
-        private DateTimeOffset _cycleStart;
+        private DateTime _cycleStart;
         private bool _syncError;
 
         public HangarTimerOverlay()
@@ -167,8 +167,7 @@ namespace SCLOCUA
                 if (!match.Success)
                     return false;
                 string value = match.Groups[1].Value;
-                var parsed = DateTimeOffset.Parse(value, CultureInfo.InvariantCulture);
-                _cycleStart = parsed.ToUniversalTime();
+                _cycleStart = DateTime.ParseExact(value, "yyyy-MM-ddTHH:mm:ss.fffK", CultureInfo.InvariantCulture, DateTimeStyles.AdjustToUniversal);
                 return true;
             }
             catch
@@ -182,21 +181,17 @@ namespace SCLOCUA
         {
             if (_syncError) return;
 
-            var now = DateTimeOffset.UtcNow;
+            var now = DateTime.UtcNow;
             int elapsed = (int)Math.Floor((now - _cycleStart).TotalSeconds);
             int cyclePos = ((elapsed % TOTAL_CYCLE) + TOTAL_CYCLE) % TOTAL_CYCLE;
 
             string status;
             int phaseRemaining;
             string[] lights = new string[5];
-            string statusText;
-            string timerPrefix;
 
             if (cyclePos < RED_PHASE)
             {
-                status = "close";
-                statusText = "Ангар зачинено";
-                timerPrefix = "Відкриття через ";
+                status = "ЗАКРИТО";
                 int timeSinceStart = cyclePos;
                 int interval = RED_PHASE / 5;
                 for (int i = 0; i < 5; i++)
@@ -206,9 +201,7 @@ namespace SCLOCUA
             }
             else if (cyclePos < RED_PHASE + GREEN_PHASE)
             {
-                status = "open";
-                statusText = "Ангар відкрито";
-                timerPrefix = "Перезапуск через ";
+                status = "ВІДКРИТО";
                 int timeSinceStart = cyclePos - RED_PHASE;
                 int interval = GREEN_PHASE / 5;
                 for (int i = 0; i < 5; i++)
@@ -218,9 +211,7 @@ namespace SCLOCUA
             }
             else
             {
-                status = "reset";
-                statusText = "Ангар перезавантажується";
-                timerPrefix = "Перезапуск через ";
+                status = "СКИДАННЯ";
                 for (int i = 0; i < 5; i++)
                     lights[i] = "black";
                 int timeSinceStart = cyclePos - RED_PHASE - GREEN_PHASE;
@@ -228,8 +219,8 @@ namespace SCLOCUA
                 _statusLabel.ForeColor = Color.Gray;
             }
 
-            _statusLabel.Text = statusText;
-            _phaseTimerLabel.Text = timerPrefix + FormatTime(phaseRemaining);
+            _statusLabel.Text = status;
+            _phaseTimerLabel.Text = FormatTime(phaseRemaining);
 
             string[] ledTimers = new string[5];
             int?[] timerValues = new int?[5];
@@ -237,13 +228,13 @@ namespace SCLOCUA
             for (int i = 0; i < 5; i++)
             {
                 int? secondsLeft = null;
-                if (status == "close" && lights[i] == "red")
+                if (status == "ЗАКРИТО" && lights[i] == "red")
                 {
                     int target = (i + 1) * (RED_PHASE / 5);
                     int timeLeft = target - cycleElapsed;
                     if (timeLeft > 0) secondsLeft = timeLeft;
                 }
-                if (status == "open" && lights[i] == "green")
+                if (status == "ВІДКРИТО" && lights[i] == "green")
                 {
                     int timeSinceGreen = cycleElapsed - RED_PHASE;
                     int target = (5 - i) * (GREEN_PHASE / 5);
