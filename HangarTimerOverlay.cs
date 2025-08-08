@@ -26,7 +26,9 @@ namespace SCLOCUA
 
         private readonly Label _statusLabel;
         private readonly Label _phaseTimerLabel;
-        private readonly LampIndicator[] _lamps = new LampIndicator[5];
+        private readonly Panel[] _lampPanels = new Panel[5];
+        private readonly Label[] _lampLabels = new Label[5];
+        private readonly Label[] _lampTimerLabels = new Label[5];
         private readonly Timer _updateTimer;
         private readonly ToolTip _opacityTip = new ToolTip();
 
@@ -75,29 +77,55 @@ namespace SCLOCUA
             };
             Controls.Add(panel);
 
-            const int lampDiameter = 40;
+            const int lampSize = 40;
+            const int timerHeight = 20;
             const int lampSpacing = 20;
-            const int lampHeight = 60;
+            int panelHeight = lampSize + timerHeight;
 
             for (int i = 0; i < 5; i++)
             {
-                var lamp = new LampIndicator
+                var lampPanel = new Panel
                 {
-                    Size = new Size(lampDiameter, lampHeight),
-                    LampColor = Color.Black
+                    Size = new Size(lampSize, panelHeight),
+                    BackColor = Color.Transparent
                 };
-                _lamps[i] = lamp;
-                panel.Controls.Add(lamp);
+
+                var lampLabel = new Label
+                {
+                    Size = new Size(lampSize, lampSize),
+                    Font = new Font("Segoe UI Emoji", 32, FontStyle.Regular),
+                    TextAlign = ContentAlignment.MiddleCenter,
+                    Text = "⚫",
+                    BackColor = Color.Transparent
+                };
+
+                var timerLabel = new Label
+                {
+                    Size = new Size(lampSize, timerHeight),
+                    Location = new Point(0, lampSize),
+                    Font = new Font("Consolas", 12, FontStyle.Bold),
+                    ForeColor = ColorTranslator.FromHtml("#babec7"),
+                    TextAlign = ContentAlignment.TopCenter,
+                    BackColor = Color.Transparent
+                };
+
+                lampPanel.Controls.Add(lampLabel);
+                lampPanel.Controls.Add(timerLabel);
+                panel.Controls.Add(lampPanel);
+
+                _lampPanels[i] = lampPanel;
+                _lampLabels[i] = lampLabel;
+                _lampTimerLabels[i] = timerLabel;
             }
 
             void LayoutLamps()
             {
-                int totalWidth = _lamps.Length * lampDiameter + (_lamps.Length - 1) * lampSpacing;
+                int totalWidth = _lampPanels.Length * lampSize + (_lampPanels.Length - 1) * lampSpacing;
                 int startX = (panel.ClientSize.Width - totalWidth) / 2;
-                int y = (panel.ClientSize.Height - lampHeight) / 2;
-                for (int i = 0; i < _lamps.Length; i++)
+                int y = (panel.ClientSize.Height - panelHeight) / 2;
+                for (int i = 0; i < _lampPanels.Length; i++)
                 {
-                    _lamps[i].Location = new Point(startX + i * (lampDiameter + lampSpacing), y);
+                    _lampPanels[i].Location = new Point(startX + i * (lampSize + lampSpacing), y);
                 }
             }
 
@@ -187,13 +215,15 @@ namespace SCLOCUA
 
             if (cyclePos < RED_PHASE)
             {
-                status = "closed";
+                status = "close";
                 int timeSinceStart = cyclePos;
                 int interval = RED_PHASE / 5;
                 for (int i = 0; i < 5; i++)
                     lights[i] = timeSinceStart >= (i + 1) * interval ? "green" : "red";
                 phaseRemaining = RED_PHASE - timeSinceStart;
-                _statusLabel.ForeColor = Color.Red;
+                _statusLabel.ForeColor = ColorTranslator.FromHtml("#ff5555");
+                _statusLabel.Text = "Ангар зачинено";
+                _phaseTimerLabel.Text = $"Відкриття через {FormatTime(phaseRemaining)}";
             }
             else if (cyclePos < RED_PHASE + GREEN_PHASE)
             {
@@ -203,7 +233,9 @@ namespace SCLOCUA
                 for (int i = 0; i < 5; i++)
                     lights[i] = timeSinceStart >= (5 - i) * interval ? "black" : "green";
                 phaseRemaining = GREEN_PHASE - timeSinceStart;
-                _statusLabel.ForeColor = Color.Lime;
+                _statusLabel.ForeColor = ColorTranslator.FromHtml("#00d024");
+                _statusLabel.Text = "Ангар відкрито";
+                _phaseTimerLabel.Text = $"Перезапуск через {FormatTime(phaseRemaining)}";
             }
             else
             {
@@ -211,11 +243,10 @@ namespace SCLOCUA
                 for (int i = 0; i < 5; i++) lights[i] = "black";
                 int timeSinceStart = cyclePos - RED_PHASE - GREEN_PHASE;
                 phaseRemaining = BLACK_PHASE - timeSinceStart;
-                _statusLabel.ForeColor = Color.Gray;
+                _statusLabel.ForeColor = ColorTranslator.FromHtml("#ffd43b");
+                _statusLabel.Text = "Ангар перезавантажується";
+                _phaseTimerLabel.Text = $"Перезапуск через {FormatTime(phaseRemaining)}";
             }
-
-            _statusLabel.Text = status.ToUpperInvariant();
-            _phaseTimerLabel.Text = FormatTime(phaseRemaining);
 
             // Determine timer under lamps
             string[] ledTimers = new string[5];
@@ -256,11 +287,9 @@ namespace SCLOCUA
 
             for (int i = 0; i < 5; i++)
             {
-                _lamps[i].LampColor = lights[i] == "red" ? Color.Red :
-                                       lights[i] == "green" ? Color.Lime : Color.Black;
-                _lamps[i].TimerText = ledTimers[i];
-                _lamps[i].ShowTimer = i == minIndex;
-                _lamps[i].Invalidate();
+                _lampLabels[i].Text = lights[i] == "red" ? "🔴" :
+                                      lights[i] == "green" ? "🟢" : "⚫";
+                _lampTimerLabels[i].Text = i == minIndex ? ledTimers[i] : string.Empty;
             }
         }
 
