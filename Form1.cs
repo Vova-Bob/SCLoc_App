@@ -1,11 +1,10 @@
-﻿using System;
+using System;
 using System.IO;
 using System.Net.Http;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 using System.Text.RegularExpressions;
 using Newtonsoft.Json.Linq;
-using SCLOCUA;
 using System.Drawing;
 
 namespace SCLOCUA
@@ -227,10 +226,7 @@ namespace SCLOCUA
                     Directory.CreateDirectory(directoryPath);
                 }
 
-                await Task.Run(() =>
-                {
-                    File.WriteAllBytes(filePath, fileData);
-                });
+                await File.WriteAllBytesAsync(filePath, fileData);
 
             }
             catch (HttpRequestException ex)
@@ -465,7 +461,7 @@ namespace SCLOCUA
 
         private void Form1_FormClosing(object sender, FormClosingEventArgs e)
         {
-            _antiAFK.Stop();
+            _antiAFK.Dispose();
         }
         // Кнопка KillFeed
         private killFeed overlayForm;

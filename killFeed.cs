@@ -1,14 +1,12 @@
-﻿using System;
+using System;
 using System.Drawing;
 using System.IO;
-using System.IO.Ports;
 using System.Media;
 using System.Runtime.InteropServices;
 using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Forms;
-using System.Linq;
 
 namespace SCLOCUA
 {
@@ -165,6 +163,9 @@ namespace SCLOCUA
                 trayIcon.Visible = false;
                 trayIcon.Dispose();
             }
+
+            soundPlayer?.Dispose();
+            soundPlayer = null;
         }
 
         private async Task ReadLogAsync(CancellationToken token)

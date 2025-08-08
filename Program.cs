@@ -1,9 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-using System.Windows.Forms;
+using System;
 using System.Threading;
+using System.Windows.Forms;
 using Microsoft.Win32;
 
 namespace SCLOCUA
@@ -41,8 +38,9 @@ namespace SCLOCUA
                     startupMenuItem.Click += (sender, e) =>
                     {
                         // Зміна стану пункта меню "Запускати при старті"
-                        SetStartup(!isStartupEnabled);
-                        startupMenuItem.Checked = !isStartupEnabled;
+                        isStartupEnabled = !isStartupEnabled;
+                        SetStartup(isStartupEnabled);
+                        startupMenuItem.Checked = isStartupEnabled;
                     };
                     contextMenu.MenuItems.Add("Відкрити", (sender, e) =>
                     {

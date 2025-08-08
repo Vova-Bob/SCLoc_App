@@ -1,11 +1,12 @@
-﻿using System;
-using System.IO;
-using System.Net;
-using System.Net.Http;
+using System;
 using System.Diagnostics;
+using System.IO;
+using System.Net.Http;
+using System.Security.Cryptography;
+using System.Security.Cryptography.X509Certificates;
 using System.Threading.Tasks;
-using Newtonsoft.Json.Linq;
 using System.Windows.Forms;
+using Newtonsoft.Json.Linq;
 
 namespace SCLOCUA
 {
@@ -13,43 +14,35 @@ namespace SCLOCUA
     {
         private const string GitHubApiUrl = "https://api.github.com/repos/Vova-Bob/SCLoc_App/releases/latest";
 
-        // Метод для перевірки наявності оновлень
         public async Task CheckForUpdatesAsync()
         {
             try
             {
                 var latestReleaseInfo = await GetLatestReleaseInfoAsync();
 
-                if (string.IsNullOrEmpty(latestReleaseInfo))
+                if (latestReleaseInfo == null)
                 {
                     MessageBox.Show("Не вдалося отримати інформацію про релізи.", "Помилка", MessageBoxButtons.OK, MessageBoxIcon.Error);
                     return;
                 }
 
-                // Розбираємо версію, URL для завантаження та опис релізу
-                var releaseParts = latestReleaseInfo.Split(',');
-                var latestVersion = releaseParts[0];
-                var downloadUrl = releaseParts[1];
-                var releaseNotes = string.Join(",", releaseParts, 2, releaseParts.Length - 2); // Опис може містити коми
+                var latestVersion = latestReleaseInfo.Version;
+                var downloadUrl = latestReleaseInfo.DownloadUrl;
+                var releaseNotes = latestReleaseInfo.ReleaseNotes;
 
-                // Обрізаємо довгий опис
                 string truncatedReleaseNotes = releaseNotes.Length > 500
                     ? releaseNotes.Substring(0, 500) + "...\n(Детальніше дивіться на сторінці GitHub)"
                     : releaseNotes;
 
-                // Поточна версія програми
                 string currentVersion = Application.ProductVersion;
 
-                // Лог для перевірки версій
                 Console.WriteLine($"Поточна версія: {currentVersion}, Остання версія: {latestVersion}");
 
-                // Порівнюємо версії
                 Version currentVer = new Version(currentVersion);
                 Version latestVer = new Version(latestVersion.TrimStart('v'));
 
                 if (latestVer > currentVer)
                 {
-                    // Якщо є нова версія
                     DialogResult result = MessageBox.Show(
                         $"Доступна нова версія програми: {latestVersion}\n" +
                         $"Ваша версія: {currentVersion}\n\n" +
@@ -61,8 +54,7 @@ namespace SCLOCUA
 
                     if (result == DialogResult.Yes)
                     {
-                        // Якщо користувач погоджується
-                        StartAppUpdate(downloadUrl);
+                        await StartAppUpdate(downloadUrl);
                     }
                 }
             }
@@ -72,24 +64,29 @@ namespace SCLOCUA
             }
         }
 
-        // Метод для отримання даних про останній реліз з GitHub
-        private async Task<string> GetLatestReleaseInfoAsync()
+        private class ReleaseInfo
+        {
+            public string Version { get; set; }
+            public string DownloadUrl { get; set; }
+            public string ReleaseNotes { get; set; }
+        }
+
+        private async Task<ReleaseInfo> GetLatestReleaseInfoAsync()
         {
             try
             {
                 var client = HttpClientService.Client;
                 var response = await client.GetStringAsync(GitHubApiUrl);
 
-                // Лог для перевірки отриманих даних
                 Console.WriteLine("Отримано дані про реліз: " + response);
 
-                // Парсимо JSON відповідь
                 var jsonResponse = JObject.Parse(response);
-                string latestVersion = jsonResponse["tag_name"].ToString(); // Наприклад, v1.5.4.6
-                string downloadUrl = jsonResponse["assets"][0]["browser_download_url"].ToString(); // URL для завантаження інсталятора
-                string releaseNotes = jsonResponse["body"].ToString(); // Опис релізу
-
-                return $"{latestVersion},{downloadUrl},{releaseNotes}";
+                return new ReleaseInfo
+                {
+                    Version = jsonResponse["tag_name"].ToString(),
+                    DownloadUrl = jsonResponse["assets"][0]["browser_download_url"].ToString(),
+                    ReleaseNotes = jsonResponse["body"].ToString()
+                };
             }
             catch (Exception ex)
             {
@@ -98,28 +95,50 @@ namespace SCLOCUA
             }
         }
 
-        // Метод для запуску інсталятора
-        private void StartAppUpdate(string installerUrl)
+        private async Task StartAppUpdate(string installerUrl)
         {
             try
             {
                 string tempInstallerPath = Path.Combine(Path.GetTempPath(), "SCLocAppInstaller.exe");
 
-                // Завантажуємо інсталятор
-                using (var client = new WebClient())
+                var client = HttpClientService.Client;
+                var response = await client.GetAsync(installerUrl);
+                response.EnsureSuccessStatusCode();
+
+                await using (var fs = new FileStream(tempInstallerPath, FileMode.Create, FileAccess.Write, FileShare.None, 8192, true))
                 {
-                    client.DownloadFile(installerUrl, tempInstallerPath);
+                    await response.Content.CopyToAsync(fs);
                 }
 
-                // Запускаємо інсталятор
-                Process.Start(tempInstallerPath);
+                if (!HasValidSignature(tempInstallerPath))
+                {
+                    MessageBox.Show("Цифровий підпис завантаженого файлу недійсний. Оновлення скасовано.", "Помилка", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    return;
+                }
 
-                // Закриваємо поточну програму після запуску оновлення (опційно)
+                Process.Start(tempInstallerPath);
                 Application.Exit();
             }
             catch (Exception ex)
             {
                 MessageBox.Show("Помилка при завантаженні оновлення: " + ex.Message, "Помилка", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+        }
+
+        private bool HasValidSignature(string filePath)
+        {
+            try
+            {
+                var cert = new X509Certificate2(X509Certificate.CreateFromSignedFile(filePath));
+                using (var chain = new X509Chain())
+                {
+                    chain.ChainPolicy.RevocationMode = X509RevocationMode.Online;
+                    return chain.Build(cert);
+                }
+            }
+            catch (CryptographicException)
+            {
+                return false;
             }
         }
     }
