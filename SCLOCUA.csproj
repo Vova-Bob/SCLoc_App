@@ -87,6 +87,9 @@
     <Compile Include="AntiAFK.cs" />
     <Compile Include="AppConfig.cs" />
     <Compile Include="AppUpdater.cs" />
+    <Compile Include="HangarTimerOverlay.cs">
+      <SubType>Form</SubType>
+    </Compile>
     <Compile Include="HttpClientService.cs" />
     <Compile Include="Form1.cs">
       <SubType>Form</SubType>
