@@ -367,3 +367,14 @@ MigrationBackup/
 FodyWeavers.xsd
 bin/
 obj/
+# Certificate and key files
+*.cer
+*.pvk
+*.pfx
+
+# User-specific configuration
+user.cfg
+
+# Additional temporary files
+*.tmp
+*.log
