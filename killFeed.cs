@@ -22,10 +22,22 @@ namespace SCLOCUA
         private NotifyIcon trayIcon;
         private ContextMenu trayMenu;
 
-        private const int HOTKEY_ID = 1;
-        private const int MOD_CTRL = 0x0002;
+        private const int HOTKEY_TOGGLE = 1;
+        private const int HOTKEY_SCALE_UP = 2;
+        private const int HOTKEY_SCALE_DOWN = 3;
+        private const int HOTKEY_OPACITY_DEC = 4;
+        private const int HOTKEY_OPACITY_INC = 5;
+
         private const int MOD_ALT = 0x0001;
+        private const int MOD_CTRL = 0x0002;
+
         private const int VK_F9 = 0x78;
+        private const int VK_UP = 0x26;
+        private const int VK_DOWN = 0x28;
+        private const int VK_LEFT = 0x25;
+        private const int VK_RIGHT = 0x27;
+
+        private const int WM_HOTKEY = 0x0312;
 
         private float scaleFactor = 1.0f;
         private const float scaleStep = 0.1f;
@@ -47,7 +59,8 @@ namespace SCLOCUA
             this.StartPosition = FormStartPosition.Manual;
             this.Location = new Point(100, 100);
             this.Size = new Size(400, 200);
-            this.KeyPreview = true;
+
+            SetTopMost();
 
             this.MouseEnter += (EventHandler)((s, e) => Cursor.Hide());
             this.MouseLeave += (s, e) => Cursor.Show();
@@ -55,7 +68,6 @@ namespace SCLOCUA
             this.MouseDown += Form_MouseDown;
             this.MouseMove += Form_MouseMove;
             this.MouseUp += Form_MouseUp;
-            this.KeyDown += Form_KeyDown;
             this.FormClosing += killFeed_FormClosing;
 
             logPath = Path.Combine(folderPath, "game.log");
@@ -70,10 +82,7 @@ namespace SCLOCUA
                 MessageBox.Show($"Файл звуку не знайдено: {soundFilePath}", "Помилка звуку", MessageBoxButtons.OK, MessageBoxIcon.Error);
 
             InitializeTray();
-            if (RegisterHotKey(this.Handle, HOTKEY_ID, MOD_CTRL | MOD_ALT, VK_F9) == 0)
-            {
-                MessageBox.Show("Не вдалося зареєструвати гарячу клавішу", "Помилка", MessageBoxButtons.OK, MessageBoxIcon.Error);
-            }
+            RegisterGlobalHotKeys();
         }
 
         private void InitializeTray()
@@ -103,11 +112,64 @@ namespace SCLOCUA
         [DllImport("user32.dll")]
         public static extern bool UnregisterHotKey(IntPtr hWnd, int id);
 
-        // Замість WndProc можна додати обробку гарячих клавіш через глобальні події
+        [DllImport("user32.dll")]
+        private static extern bool SetWindowPos(IntPtr hWnd, IntPtr hWndInsertAfter, int X, int Y, int cx, int cy, uint uFlags);
+
+        private static readonly IntPtr HWND_TOPMOST = new IntPtr(-1);
+        private const uint SWP_NOMOVE = 0x0002;
+        private const uint SWP_NOSIZE = 0x0001;
+        private const uint SWP_NOACTIVATE = 0x0010;
+
+        protected override bool ShowWithoutActivation => true;
+
+        private void SetTopMost()
+        {
+            SetWindowPos(this.Handle, HWND_TOPMOST, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE);
+        }
+
+        private void RegisterGlobalHotKeys()
+        {
+            if (RegisterHotKey(this.Handle, HOTKEY_TOGGLE, MOD_CTRL | MOD_ALT, VK_F9) == 0 ||
+                RegisterHotKey(this.Handle, HOTKEY_SCALE_UP, MOD_ALT, VK_UP) == 0 ||
+                RegisterHotKey(this.Handle, HOTKEY_SCALE_DOWN, MOD_ALT, VK_DOWN) == 0 ||
+                RegisterHotKey(this.Handle, HOTKEY_OPACITY_DEC, MOD_ALT, VK_LEFT) == 0 ||
+                RegisterHotKey(this.Handle, HOTKEY_OPACITY_INC, MOD_ALT, VK_RIGHT) == 0)
+            {
+                MessageBox.Show("Не вдалося зареєструвати одну з гарячих клавіш", "Помилка", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+        }
+
         protected override void WndProc(ref Message m)
         {
-            if (m.Msg == 0x0312 && m.WParam.ToInt32() == HOTKEY_ID)
-                ToggleVisibility();
+            if (m.Msg == WM_HOTKEY)
+            {
+                switch (m.WParam.ToInt32())
+                {
+                    case HOTKEY_TOGGLE:
+                        ToggleVisibility();
+                        break;
+                    case HOTKEY_SCALE_UP:
+                        scaleFactor = Math.Min(2.0f, scaleFactor + scaleStep);
+                        UpdateFontAndWindowSize();
+                        SetTopMost();
+                        break;
+                    case HOTKEY_SCALE_DOWN:
+                        scaleFactor = Math.Max(0.5f, scaleFactor - scaleStep);
+                        UpdateFontAndWindowSize();
+                        SetTopMost();
+                        break;
+                    case HOTKEY_OPACITY_DEC:
+                        opacityLevel = Math.Max(0.1f, opacityLevel - opacityStep);
+                        this.Opacity = opacityLevel;
+                        SetTopMost();
+                        break;
+                    case HOTKEY_OPACITY_INC:
+                        opacityLevel = Math.Min(1.0f, opacityLevel + opacityStep);
+                        this.Opacity = opacityLevel;
+                        SetTopMost();
+                        break;
+                }
+            }
 
             base.WndProc(ref m);
         }
@@ -123,6 +185,7 @@ namespace SCLOCUA
                     this.Show();
                     this.BringToFront();
                     this.Enabled = true; // Дозволяємо взаємодію з вікном
+                    SetTopMost();
                 }
                 else
                 {
@@ -137,6 +200,7 @@ namespace SCLOCUA
             this.Visible = true;
             this.WindowState = FormWindowState.Normal;
             this.BringToFront();
+            SetTopMost();
         }
 
         private void ExitApplication(object sender, EventArgs e)
@@ -159,7 +223,11 @@ namespace SCLOCUA
                 }
             }
 
-            UnregisterHotKey(this.Handle, HOTKEY_ID);
+            UnregisterHotKey(this.Handle, HOTKEY_TOGGLE);
+            UnregisterHotKey(this.Handle, HOTKEY_SCALE_UP);
+            UnregisterHotKey(this.Handle, HOTKEY_SCALE_DOWN);
+            UnregisterHotKey(this.Handle, HOTKEY_OPACITY_DEC);
+            UnregisterHotKey(this.Handle, HOTKEY_OPACITY_INC);
 
             if (trayIcon != null)
             {
@@ -310,19 +378,6 @@ namespace SCLOCUA
         }
 
         private void Form_MouseUp(object sender, MouseEventArgs e) => isDragging = false;
-
-        private void Form_KeyDown(object sender, KeyEventArgs e)
-        {
-            if (!e.Alt) return;
-
-            if (e.KeyCode == Keys.Up) scaleFactor = Math.Min(2.0f, scaleFactor + scaleStep);
-            if (e.KeyCode == Keys.Down) scaleFactor = Math.Max(0.5f, scaleFactor - scaleStep);
-            if (e.KeyCode == Keys.Left) opacityLevel = Math.Max(0.1f, opacityLevel - opacityStep); // Зменшення прозорості фону
-            if (e.KeyCode == Keys.Right) opacityLevel = Math.Min(1.0f, opacityLevel + opacityStep); // Збільшення прозорості фону
-
-            UpdateFontAndWindowSize();
-            this.Opacity = opacityLevel; // Оновлюємо прозорість
-        }
 
         private void UpdateFontAndWindowSize()
         {
