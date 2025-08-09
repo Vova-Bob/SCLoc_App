@@ -1,0 +1,21 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  test:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 8.0.x
+      - name: Restore NuGet packages
+        run: nuget restore SCLOCUA.sln
+      - name: Build
+        run: msbuild SCLOCUA.sln /p:Configuration=Debug
+      - name: Test
+        run: dotnet test Tests/MyApp.Tests.csproj --no-build --verbosity normal
