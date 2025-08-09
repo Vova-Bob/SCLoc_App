@@ -11,7 +11,6 @@ namespace SCLOCUA
     public partial class WikiForm : Form
     {
         private Dictionary<string, string> wikiDictionary = new Dictionary<string, string>();
-        private const string WikiUrl = "https://api.github.com/repos/Vova-Bob/SC_localization_UA/contents/wiki.ini";
         private HttpClient client;
         private int _autoCompleteIndex = 0; // Індекс поточного терміна
         private List<string> autoCompleteKeys = new List<string>(); // Список всіх термінів для автодоповнення
@@ -30,7 +29,7 @@ namespace SCLOCUA
         private async void WikiForm_Load(object sender, EventArgs e)
         {
             button1.Enabled = false;
-            string wikiText = await DownloadWikiTextAsync(WikiUrl);
+            string wikiText = await DownloadWikiTextAsync(AppConfig.WikiUrl);
 
             if (!string.IsNullOrEmpty(wikiText))
             {

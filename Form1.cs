@@ -11,11 +11,6 @@ namespace SCLOCUA
 {
     public partial class Form1 : Form
     {
-        private const string UserCfgFileName = "user.cfg";
-        private const string GlobalIniFileName = "global.ini";
-        private const string LocalizationPath = "Data/Localization/korean_(south_korea)";
-        private const string GithubGistUrlPattern = @"https://gist.github.com/\w+/\w+";
-        private const string GithubReleasesApiUrl = "https://api.github.com/repos/Vova-Bob/SC_localization_UA/releases";  // API для отримання релізів
         private WikiForm wikiForm = null; // Оголошуємо змінну для форми
         private readonly HttpClient httpClient;
         private ToolTip toolTip = new ToolTip(); // Створення об'єкта ToolTip
@@ -61,8 +56,8 @@ namespace SCLOCUA
             {
                 UpdateLabel();
                 button2.Enabled = true;
-                bool userCfgExists = File.Exists(Path.Combine(selectedFolderPath, UserCfgFileName));
-                bool globalIniExists = File.Exists(Path.Combine(selectedFolderPath, LocalizationPath, GlobalIniFileName));
+                bool userCfgExists = File.Exists(Path.Combine(selectedFolderPath, AppConfig.UserCfgFileName));
+                bool globalIniExists = File.Exists(Path.Combine(selectedFolderPath, AppConfig.LocalizationPath, AppConfig.GlobalIniFileName));
                 button2.Text = userCfgExists || globalIniExists ? "Оновити локалізацію" : "Встановити локалізацію";
             }
         }
@@ -93,7 +88,7 @@ namespace SCLOCUA
                 {
                     selectedFolderPath = folderDialog.SelectedPath;
                     UpdateLabel();
-                    bool userCfgExists = File.Exists(Path.Combine(selectedFolderPath, UserCfgFileName));
+                    bool userCfgExists = File.Exists(Path.Combine(selectedFolderPath, AppConfig.UserCfgFileName));
                     checkBox1.Checked = !userCfgExists;
 
                     toolStripStatusLabel1.Text = "Перейдіть до встановлення локалізації";
@@ -121,12 +116,12 @@ namespace SCLOCUA
 
                 if (!string.IsNullOrEmpty(githubReleaseUrl))
                 {
-                    string localFilePath = Path.Combine(selectedFolderPath, LocalizationPath, GlobalIniFileName);
+                    string localFilePath = Path.Combine(selectedFolderPath, AppConfig.LocalizationPath, AppConfig.GlobalIniFileName);
                     await DownloadFileAsync(githubReleaseUrl, localFilePath);
                     toolStripProgressBar1.Value++;
                 }
 
-                string gistContent = await ReadFileWithTimeoutAsync(Path.Combine(selectedFolderPath, LocalizationPath, GlobalIniFileName));
+                string gistContent = await ReadFileWithTimeoutAsync(Path.Combine(selectedFolderPath, AppConfig.LocalizationPath, AppConfig.GlobalIniFileName));
                 toolStripStatusLabel1.Text = DetectGithubGistUrl(gistContent) ? "Знайдено URL до Github gist" : "Готово";
             }
             catch (Exception ex)
@@ -141,10 +136,10 @@ namespace SCLOCUA
 
         private async Task EnsureUserCfgAsync()
         {
-            bool userCfgExists = File.Exists(Path.Combine(selectedFolderPath, UserCfgFileName));
+            bool userCfgExists = File.Exists(Path.Combine(selectedFolderPath, AppConfig.UserCfgFileName));
             if (!userCfgExists && checkBox1.Checked)
             {
-                await CopyFileAsync(UserCfgFileName, Path.Combine(selectedFolderPath, UserCfgFileName));
+                await CopyFileAsync(AppConfig.UserCfgFileName, Path.Combine(selectedFolderPath, AppConfig.UserCfgFileName));
                 toolStripProgressBar1.Value++;
                 checkBox1.Checked = false;
             }
@@ -154,12 +149,12 @@ namespace SCLOCUA
         {
             if (selectedFolderPath.Contains("LIVE"))
             {
-                return "https://github.com/Vova-Bob/SC_localization_UA/releases/latest/download/global.ini";
+                return AppConfig.LatestGlobalIniUrl;
             }
             if (selectedFolderPath.Contains("PTU") || selectedFolderPath.Contains("EPTU") || selectedFolderPath.Contains("4.0_PREVIEW"))
             {
                 var tagName = await GetLatestReleaseTagAsync();
-                return $"https://github.com/Vova-Bob/SC_localization_UA/releases/download/{tagName}/global.ini";
+                return $"https://github.com/Vova-Bob/SC_localization_UA/releases/download/{tagName}/{AppConfig.GlobalIniFileName}";
             }
             return string.Empty;
         }
@@ -191,7 +186,7 @@ namespace SCLOCUA
             try
             {
                 // Оновлений запит для отримання лише пререлізів
-                HttpResponseMessage response = await httpClient.GetAsync(GithubReleasesApiUrl + "?prerelease=true");
+                HttpResponseMessage response = await httpClient.GetAsync(AppConfig.GithubReleasesApiUrl + "?prerelease=true");
                 response.EnsureSuccessStatusCode();
 
                 string responseBody = await response.Content.ReadAsStringAsync();
@@ -220,7 +215,7 @@ namespace SCLOCUA
 
         private bool DetectGithubGistUrl(string content)
         {
-            string regexPattern = GithubGistUrlPattern;
+            string regexPattern = AppConfig.GithubGistUrlPattern;
             Match match = Regex.Match(content, regexPattern);
             return match.Success;
         }
@@ -260,18 +255,18 @@ namespace SCLOCUA
 
             try
             {
-                bool userCfgExists = File.Exists(Path.Combine(selectedFolderPath, UserCfgFileName));
-                bool globalIniExists = File.Exists(Path.Combine(selectedFolderPath, LocalizationPath, GlobalIniFileName));
+                bool userCfgExists = File.Exists(Path.Combine(selectedFolderPath, AppConfig.UserCfgFileName));
+                bool globalIniExists = File.Exists(Path.Combine(selectedFolderPath, AppConfig.LocalizationPath, AppConfig.GlobalIniFileName));
 
                 if (userCfgExists || globalIniExists)
                 {
                     if (userCfgExists)
                     {
-                        await DeleteFileAsync(Path.Combine(selectedFolderPath, UserCfgFileName));
+                        await DeleteFileAsync(Path.Combine(selectedFolderPath, AppConfig.UserCfgFileName));
                     }
                     if (globalIniExists)
                     {
-                        await DeleteFileAsync(Path.Combine(selectedFolderPath, LocalizationPath, GlobalIniFileName));
+                        await DeleteFileAsync(Path.Combine(selectedFolderPath, AppConfig.LocalizationPath, AppConfig.GlobalIniFileName));
                     }
 
                     toolStripProgressBar1.Value = 0;
@@ -340,7 +335,7 @@ namespace SCLOCUA
             try
             {
                 // Отримуємо останні релізи (включаючи пререлізи)
-                HttpResponseMessage response = await httpClient.GetAsync(GithubReleasesApiUrl);
+                HttpResponseMessage response = await httpClient.GetAsync(AppConfig.GithubReleasesApiUrl);
                 response.EnsureSuccessStatusCode();
 
                 string responseBody = await response.Content.ReadAsStringAsync();
@@ -380,7 +375,7 @@ namespace SCLOCUA
         {
             if (!string.IsNullOrWhiteSpace(selectedFolderPath))
             {
-                bool userCfgExists = File.Exists(Path.Combine(selectedFolderPath, UserCfgFileName));
+                bool userCfgExists = File.Exists(Path.Combine(selectedFolderPath, AppConfig.UserCfgFileName));
                 checkBox1.Checked = !userCfgExists;
             }
 
