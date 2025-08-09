@@ -12,7 +12,6 @@ namespace SCLOCUA
 {
     internal class AppUpdater
     {
-        private const string GitHubApiUrl = "https://api.github.com/repos/Vova-Bob/SCLoc_App/releases/latest";
 
         public async Task CheckForUpdatesAsync()
         {
@@ -76,7 +75,7 @@ namespace SCLOCUA
             try
             {
                 var client = HttpClientService.Client;
-                var response = await client.GetStringAsync(GitHubApiUrl);
+                var response = await client.GetStringAsync(AppConfig.GitHubApiUrl);
 
                 Console.WriteLine("Отримано дані про реліз: " + response);
 
