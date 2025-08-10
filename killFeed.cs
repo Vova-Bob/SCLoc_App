@@ -80,7 +80,7 @@ namespace SCLOCUA
             if (File.Exists(soundFilePath))
                 soundPlayer = new SoundPlayer(soundFilePath);
             else
-                MessageBox.Show($"Файл звуку не знайдено: {soundFilePath}", "Помилка звуку", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                MessageBox.Show($"Файл killSound.wav не знайдено: {soundFilePath}", "Помилка звуку", MessageBoxButtons.OK, MessageBoxIcon.Error);
 
             InitializeTray();
             RegisterGlobalHotKeys();
