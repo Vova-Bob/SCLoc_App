@@ -353,7 +353,7 @@ namespace ExecutiveHangarOverlay
             using (var fnt = new Font("Segoe UI", 9f))
             {
                 g.DrawString(
-                    "F6: показ/приховати • F7: старт=зараз • Shift+F7: ввести мс • F9: синхр. з URL • Shift+F9: стерти оверрайд+синхр. • F8: кліки крізь • Ctrl+F8: тимчас. перетягування • " +
+                    "F6: показ/приховати • F7: старт=зараз • Shift+F7: ввести мс • F9: синхр. • Shift+F9: стерти+синхр. • F8: кліки крізь • Ctrl+F8: тимчас. перетягування • " +
                     "Ctrl+–/=/0: масштаб • Ctrl+Alt+–/= /0: прозорість • Esc: закрити",
                     fnt, brush, new PointF(16, BASE_H - 24));
             }

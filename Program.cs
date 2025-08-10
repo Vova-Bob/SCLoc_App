@@ -143,7 +143,7 @@ namespace SCLOCUA
                         mainForm.WindowState = FormWindowState.Normal;
                     });
 
-                    contextMenu.MenuItems.Add("Оверлей (F6)", (sender, e) =>
+                    contextMenu.MenuItems.Add("EX-Hangar (F6)", (sender, e) =>
                     {
                         ensureOverlay();
                         if (overlay.Visible) overlay.Hide();
