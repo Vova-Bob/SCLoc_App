@@ -6,42 +6,42 @@ using System.Windows.Forms;
 using System.Text.RegularExpressions;
 using Newtonsoft.Json.Linq;
 using System.Drawing;
+using System.Diagnostics; // ProcessStartInfo
 
 namespace SCLOCUA
 {
     public partial class Form1 : Form
     {
-        // ---- Константи ----
+        // ---- Constants ----
         private const string UserCfgFileName = "user.cfg";
         private const string GlobalIniFileName = "global.ini";
         private const string LocalizationPath = "Data/Localization/korean_(south_korea)";
         private const string GithubGistUrlPattern = @"https://gist.github.com/\w+/\w+";
-        // Список релізів перекладу (офіційні релізи + пререлізи)
         private const string GithubReleasesApiUrl = "https://api.github.com/repos/Vova-Bob/SC_localization_UA/releases";
 
-        // ---- Поля ----
+        // ---- Fields ----
         private WikiForm wikiForm = null;
         private readonly HttpClient httpClient;
         private readonly ToolTip toolTip = new ToolTip();
         private string selectedFolderPath = "";
         private AntiAFK _antiAFK;
-        private killFeed overlayForm;
+        private killFeed overlayForm; // overlay window
 
         public Form1()
         {
             InitializeComponent();
 
-            // Спільний HttpClient з твого проекту
+            // Shared HttpClient from your project
             httpClient = HttpClientService.Client;
 
-            // UI властивості
+            // UI props
             this.MaximizeBox = false;
             this.Icon = Properties.Resources.Icon;
 
-            // Востаннє вибраний шлях до гри
-            selectedFolderPath = Properties.Settings.Default.LastSelectedFolderPath;
+            // Last selected game path
+            selectedFolderPath = Properties.Settings.Default.LastSelectedFolderPath ?? string.Empty;
 
-            // Підказки
+            // Tooltips
             toolTip.SetToolTip(pictureBox2, "Хочеш підтримати проєкт — тисни на кота! Кожна чашка кави наближає нас до завершення перекладу ❤️");
             toolTip.SetToolTip(buttonClearCache, "Очистити кеш шейдерів гри Star Citizen");
             toolTip.SetToolTip(buttonWiki, "Відкрити/закрити SC_Wiki");
@@ -49,20 +49,21 @@ namespace SCLOCUA
             toolTip.SetToolTip(button1, "Обрати: LIVE, EPTU, PTU, 4.0_PREVIEW");
             toolTip.SetToolTip(button2, "Встановити / Оновити файли локалізації");
             toolTip.SetToolTip(button3, "Видалити файли локалізації");
+            toolTip.SetToolTip(buttonkillfeed, "Увімкнути/вимкнути KillFeed-оверлей");
 
-            // Анти-AFK
+            // Anti-AFK
             _antiAFK = new AntiAFK();
             toolTip.SetToolTip(buttonAntiAFK, "Увімкнути/вимкнути Anti-AFK");
             buttonAntiAFK.Click += ButtonAntiAFK_Click;
 
-            // Підписка на закриття форми
+            // Form closing
             this.FormClosing += Form1_FormClosing;
 
             InitializeUI();
             InitializeEvents();
         }
 
-        // ---- Початковий стан UI ----
+        // ---- Initial UI state ----
         private void InitializeUI()
         {
             label1.Text = "Виберіть шлях до папки StarCitizen/LIVE або /PTU/EPTU";
@@ -79,9 +80,12 @@ namespace SCLOCUA
 
                 button2.Text = (userCfgExists || globalIniExists) ? "Оновити локалізацію" : "Встановити локалізацію";
             }
+
+            // Default visual state for KillFeed button
+            UpdateKillFeedButtonUi(false);
         }
 
-        // ---- Прив'язка подій ----
+        // ---- Event bindings ----
         private void InitializeEvents()
         {
             button1.Click += SelectFolderButtonClick;
@@ -91,12 +95,12 @@ namespace SCLOCUA
             AssignLink(linkLabel1, "https://docs.google.com/forms/d/e/1FAIpQLSdcNr1EdqUU6K63MVwKyDX7-twxDsCQDw8PfgmDSu_D1q9GRA/viewform");
             AssignLink(linkLabel2, "https://discord.gg/QVV2G2aKzf");
             AssignLink(linkLabel3, "https://github.com/Vova-Bob/SC_localization_UA");
-            AssignLink(linkLabel4, "https://docs.google.com/forms/d/e/1FAIpQLSfWRo63MgESTmzr-Cr0kPVkfgHSxZW2eZelTtGsw0htoMe_6A/viewform");
+            AssignLink(linkLabel4, "https://docs.google.com/forms/d/e/1FAIpQLSfWRo63MgESTmzr-C0kPVkfgHSxZW2eZelTtGsw0htoMe_6A/viewform");
             AssignLink(linkLabel5, "https://gitlab.com/valdeus/sc_localization_ua");
             AssignLink(pictureBox1, "https://usf.42web.io");
         }
 
-        // ---- Вибір папки з грою ----
+        // ---- Select game folder ----
         private void SelectFolderButtonClick(object sender, EventArgs e)
         {
             using (var folderDialog = new FolderBrowserDialog())
@@ -115,17 +119,21 @@ namespace SCLOCUA
                     toolStripStatusLabel1.Text = "Перейдіть до встановлення локалізації";
                     button2.Enabled = true;
 
-                    // Зберігаємо шлях
+                    // Save path
                     Properties.Settings.Default.LastSelectedFolderPath = selectedFolderPath;
                     Properties.Settings.Default.Save();
                 }
             }
         }
 
-        // ---- Встановити/оновити локалізацію ----
+        // ---- Install/Update localization ----
         private async void UpdateLocalizationButtonClick(object sender, EventArgs e)
         {
-            if (string.IsNullOrWhiteSpace(selectedFolderPath)) return;
+            if (string.IsNullOrWhiteSpace(selectedFolderPath) || !Directory.Exists(selectedFolderPath))
+            {
+                ShowErrorMessage("Спочатку оберіть теку гри.");
+                return;
+            }
 
             toolStripProgressBar1.Maximum = checkBox1.Checked ? 2 : 1;
             toolStripProgressBar1.Value = 0;
@@ -133,10 +141,10 @@ namespace SCLOCUA
 
             try
             {
-                // 1) user.cfg (за потреби)
+                // 1) user.cfg (optional)
                 await EnsureUserCfgAsync();
 
-                // 2) URL на global.ini для відповідної гілки гри
+                // 2) global.ini URL
                 string githubReleaseUrl = await GetGithubReleaseUrlAsync();
 
                 if (!string.IsNullOrEmpty(githubReleaseUrl))
@@ -146,10 +154,17 @@ namespace SCLOCUA
                     toolStripProgressBar1.Value++;
                 }
 
-                // 3) Перевірка, чи всередині global.ini є посилання на gist (опційно)
+                // 3) Optional: detect gist link inside global.ini
                 string gistContentPath = Path.Combine(selectedFolderPath, LocalizationPath, GlobalIniFileName);
-                string gistContent = await ReadFileWithTimeoutAsync(gistContentPath);
-                toolStripStatusLabel1.Text = DetectGithubGistUrl(gistContent) ? "Знайдено URL до GitHub Gist" : "Готово";
+                if (File.Exists(gistContentPath))
+                {
+                    string gistContent = await ReadFileWithTimeoutAsync(gistContentPath);
+                    toolStripStatusLabel1.Text = DetectGithubGistUrl(gistContent) ? "Знайдено URL до GitHub Gist" : "Готово";
+                }
+                else
+                {
+                    toolStripStatusLabel1.Text = "Готово";
+                }
             }
             catch (Exception ex)
             {
@@ -161,7 +176,7 @@ namespace SCLOCUA
             }
         }
 
-        // Створити user.cfg (якщо треба)
+        // Create user.cfg if needed
         private async Task EnsureUserCfgAsync()
         {
             bool userCfgExists = File.Exists(Path.Combine(selectedFolderPath, UserCfgFileName));
@@ -173,18 +188,20 @@ namespace SCLOCUA
             }
         }
 
-        // Повертає правильний URL для завантаження global.ini
+        // Resolve proper URL for global.ini
         private async Task<string> GetGithubReleaseUrlAsync()
         {
-            if (selectedFolderPath.Contains("LIVE"))
+            if (selectedFolderPath.IndexOf("LIVE", StringComparison.OrdinalIgnoreCase) >= 0)
             {
-                // Для LIVE — завжди останній стабільний реліз
+                // For LIVE — latest stable release
                 return "https://github.com/Vova-Bob/SC_localization_UA/releases/latest/download/global.ini";
             }
 
-            if (selectedFolderPath.Contains("PTU") || selectedFolderPath.Contains("EPTU") || selectedFolderPath.Contains("4.0_PREVIEW"))
+            if (selectedFolderPath.IndexOf("PTU", StringComparison.OrdinalIgnoreCase) >= 0 ||
+                selectedFolderPath.IndexOf("EPTU", StringComparison.OrdinalIgnoreCase) >= 0 ||
+                selectedFolderPath.IndexOf("4.0_PREVIEW", StringComparison.OrdinalIgnoreCase) >= 0)
             {
-                // Для тестових — беремо останній пререліз (якщо він є), інакше — останній реліз
+                // For test branches — prefer latest prerelease, otherwise latest release
                 var tagName = await GetLatestReleaseTagAsync();
                 return string.IsNullOrEmpty(tagName)
                     ? ""
@@ -194,7 +211,7 @@ namespace SCLOCUA
             return string.Empty;
         }
 
-        // Безпечне читання файлу з тайм-аутом
+        // Safe file read with timeout
         private async Task<string> ReadFileWithTimeoutAsync(string path, int timeout = 5000)
         {
             var task = Task.Run(() => File.ReadAllText(path));
@@ -203,7 +220,7 @@ namespace SCLOCUA
             return await task;
         }
 
-        // Копіювання файлу з тайм-аутом
+        // Copy file with timeout
         private async Task CopyFileAsync(string sourceFileName, string destinationPath, int timeout = 5000)
         {
             var task = Task.Run(() => File.Copy(sourceFileName, destinationPath, true));
@@ -211,7 +228,7 @@ namespace SCLOCUA
                 throw new TimeoutException("Копіювання файлу перевищило час очікування.");
         }
 
-        // Видалення файлу з тайм-аутом
+        // Delete file with timeout
         private async Task DeleteFileAsync(string path, int timeout = 5000)
         {
             var task = Task.Run(() => { if (File.Exists(path)) File.Delete(path); });
@@ -219,12 +236,12 @@ namespace SCLOCUA
                 throw new TimeoutException("Видалення файлу перевищило час очікування.");
         }
 
-        // Отримати тег останнього пререлізу (якщо немає — взяти перший реліз)
+        // Get latest prerelease tag, else first release tag
         private async Task<string> GetLatestReleaseTagAsync()
         {
             try
             {
-                // Забираємо список релізів (GitHub віддає у порядку від нового до старого)
+                // GitHub returns newest first
                 var resp = await httpClient.GetAsync(GithubReleasesApiUrl);
                 resp.EnsureSuccessStatusCode();
 
@@ -237,14 +254,14 @@ namespace SCLOCUA
                     return string.Empty;
                 }
 
-                // Перший пререліз, якщо є
+                // First prerelease if any
                 foreach (var r in releases)
                 {
                     if (r.Value<bool?>("prerelease") == true)
                         return r.Value<string>("tag_name");
                 }
 
-                // Інакше — перший стабільний реліз
+                // Otherwise first stable release
                 return releases[0].Value<string>("tag_name");
             }
             catch (Exception ex)
@@ -254,14 +271,14 @@ namespace SCLOCUA
             }
         }
 
-        // Пошук URL Gist у вмісті
+        // Gist URL detection
         private bool DetectGithubGistUrl(string content)
         {
-            var match = Regex.Match(content, GithubGistUrlPattern);
+            var match = Regex.Match(content ?? string.Empty, GithubGistUrlPattern);
             return match.Success;
         }
 
-        // Завантаження файлу за URL
+        // Download file to path
         private async Task DownloadFileAsync(string url, string filePath)
         {
             try
@@ -286,7 +303,7 @@ namespace SCLOCUA
             }
         }
 
-        // ---- Видалити файли локалізації ----
+        // ---- Delete localization files ----
         private async void DeleteFilesButtonClick(object sender, EventArgs e)
         {
             if (string.IsNullOrWhiteSpace(selectedFolderPath)) return;
@@ -321,19 +338,19 @@ namespace SCLOCUA
             }
         }
 
-        // Оновлення тексту з вибраною текою
+        // ---- Label with selected path ----
         private void UpdateLabel()
         {
             label1.Text = selectedFolderPath;
         }
 
-        // Стандартний показ помилок
+        // ---- Error message helper ----
         private void ShowErrorMessage(string message)
         {
             MessageBox.Show(message, "Помилка", MessageBoxButtons.OK, MessageBoxIcon.Error);
         }
 
-        // Прив’язати клік/линк до URL
+        // ---- Assign a clickable URL to a control ----
         private void AssignLink(Control control, string url)
         {
             control.Tag = url;
@@ -355,7 +372,8 @@ namespace SCLOCUA
             }
             try
             {
-                System.Diagnostics.Process.Start(url);
+                // UseShellExecute = true for URLs (works across .NETs)
+                Process.Start(new ProcessStartInfo(url) { UseShellExecute = true });
             }
             catch (Exception ex)
             {
@@ -363,7 +381,7 @@ namespace SCLOCUA
             }
         }
 
-        // ---- Легка нотифікація про нові релізи перекладу (не апдейт програми!) ----
+        // ---- Release notification (non-blocking) ----
         private async Task CheckForNewReleasesAsync()
         {
             try
@@ -383,7 +401,7 @@ namespace SCLOCUA
 
                 string savedTag = Properties.Settings.Default.LatestCheckedReleaseTag;
 
-                // Показуємо лише один раз для нового тега
+                // Show once per new tag
                 if (!string.Equals(savedTag, latestTag, StringComparison.OrdinalIgnoreCase))
                 {
                     Properties.Settings.Default.LatestCheckedReleaseTag = latestTag;
@@ -399,12 +417,12 @@ namespace SCLOCUA
             }
             catch (Exception ex)
             {
-                // Не критично — просто показуємо помилку
+                // Non-critical
                 ShowErrorMessage($"Помилка при перевірці нових релізів: {ex.Message}");
             }
         }
 
-        // ---- Події форми ----
+        // ---- Form events ----
         private void Form1_Load(object sender, EventArgs e)
         {
             if (!string.IsNullOrWhiteSpace(selectedFolderPath))
@@ -413,8 +431,11 @@ namespace SCLOCUA
                 checkBox1.Checked = !userCfgExists;
             }
 
-            // one-shot, не блокуємо UI
+            // One-shot, non-blocking
             _ = CheckForNewReleasesAsync();
+
+            // Sync KillFeed button state on load (no dependency on killFeed API)
+            UpdateKillFeedButtonUi(overlayForm != null && overlayForm.Visible && !overlayForm.IsDisposed);
         }
 
         private void pictureBox2_Click(object sender, EventArgs e)
@@ -422,14 +443,14 @@ namespace SCLOCUA
             OpenUrl("https://send.monobank.ua/jar/44HXkQkorg");
         }
 
-        // Кнопка Wiki
+        // Wiki toggle
         private void buttonWiki_Click(object sender, EventArgs e)
         {
             if (wikiForm == null || wikiForm.IsDisposed)
             {
                 wikiForm = new WikiForm();
 
-                // Позиціонуємо Wiki під головним вікном
+                // Place Wiki under main window
                 int x = this.Location.X;
                 int y = this.Location.Y + this.Height;
 
@@ -443,7 +464,7 @@ namespace SCLOCUA
             }
         }
 
-        // Очистити кеш шейдерів
+        // Clear shaders cache
         private void buttonClearCache_Click(object sender, EventArgs e)
         {
             try
@@ -475,7 +496,7 @@ namespace SCLOCUA
             }
         }
 
-        // Перемикач Anti-AFK
+        // Anti-AFK toggle
         private void ButtonAntiAFK_Click(object sender, EventArgs e)
         {
             _antiAFK.ToggleAntiAFK(toolStripStatusLabel1);
@@ -484,20 +505,58 @@ namespace SCLOCUA
         private void Form1_FormClosing(object sender, FormClosingEventArgs e)
         {
             _antiAFK.Dispose();
+            // Close overlay if still open (avoid zombie handle)
+            try { if (overlayForm != null && !overlayForm.IsDisposed) overlayForm.Close(); } catch { }
         }
 
-        // KillFeed (оверлей)
+        // ---- KillFeed (overlay) ----
         private void buttonkillfeed_Click(object sender, EventArgs e)
         {
             if (overlayForm == null || overlayForm.IsDisposed)
             {
+                if (string.IsNullOrWhiteSpace(selectedFolderPath))
+                {
+                    ShowErrorMessage("Спочатку оберіть теку гри (LIVE/PTU/EPTU).");
+                    return;
+                }
+
                 overlayForm = new killFeed(selectedFolderPath);
+
+                // Keep reference fresh
+                overlayForm.FormClosed += (_, __) =>
+                {
+                    overlayForm = null;
+                    UpdateKillFeedButtonUi(false);
+                };
+
                 overlayForm.Show();
+                overlayForm.BringToFront();
+                UpdateKillFeedButtonUi(true);
             }
             else
             {
-                overlayForm.ToggleVisibility();
+                // No dependency on killFeed API: toggle by Show/Hide directly
+                if (overlayForm.Visible)
+                {
+                    overlayForm.Hide();
+                    UpdateKillFeedButtonUi(false);
+                }
+                else
+                {
+                    overlayForm.Show();
+                    overlayForm.BringToFront();
+                    UpdateKillFeedButtonUi(true);
+                }
             }
+        }
+
+        // Visual feedback on KillFeed button
+        private void UpdateKillFeedButtonUi(bool on)
+        {
+            // Simple and readable UI feedback
+            buttonkillfeed.Text = on ? "KillFeed: ON" : "KillFeed: OFF";
+            buttonkillfeed.BackColor = on ? Color.FromArgb(40, 160, 90) : SystemColors.Control;
+            buttonkillfeed.ForeColor = on ? Color.White : SystemColors.ControlText;
         }
     }
 }
