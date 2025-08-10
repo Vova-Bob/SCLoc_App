@@ -63,6 +63,11 @@ namespace SCLOCUA
                         }
                     };
 
+                    // Resolve start timestamp for the hangar overlay and show it.
+                    long startMs = ExecutiveHangarOverlay.StartTimeProvider.ResolveAsync().GetAwaiter().GetResult();
+                    var hangarOverlay = new ExecutiveHangarOverlay.HangarOverlayForm(startMs);
+                    hangarOverlay.Show();
+
                     Application.Run(mainForm);
                 }
                 mutex.ReleaseMutex();
