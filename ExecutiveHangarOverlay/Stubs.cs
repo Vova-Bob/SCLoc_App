@@ -1,4 +1,4 @@
-#if !FEATURE_OVERLAY
+﻿#if !FEATURE_OVERLAY
 // Minimal stubs so Program.cs compiles without removing features.
 // Keep API surface tiny; replace with real implementations later.
 using System;
@@ -6,6 +6,7 @@ using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Forms;
+#pragma warning disable CS0067
 
 namespace ExecutiveHangarOverlay
 {
@@ -82,4 +83,5 @@ namespace ExecutiveHangarOverlay
         public void Dispose() { }
     }
 }
+#pragma warning restore CS0067
 #endif

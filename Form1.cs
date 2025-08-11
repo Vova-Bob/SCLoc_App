@@ -101,7 +101,7 @@ namespace SCLOCUA
         }
 
         // ---- Select game folder ----
-        private void SelectFolderButtonClick(object sender, EventArgs e)
+        private void SelectFolderButtonClick(object? sender, EventArgs e)
         {
             using (var folderDialog = new FolderBrowserDialog())
             {
@@ -127,7 +127,7 @@ namespace SCLOCUA
         }
 
         // ---- Install/Update localization ----
-        private async void UpdateLocalizationButtonClick(object sender, EventArgs e)
+        private async void UpdateLocalizationButtonClick(object? sender, EventArgs e)
         {
             if (string.IsNullOrWhiteSpace(selectedFolderPath) || !Directory.Exists(selectedFolderPath))
             {
@@ -304,7 +304,7 @@ namespace SCLOCUA
         }
 
         // ---- Delete localization files ----
-        private async void DeleteFilesButtonClick(object sender, EventArgs e)
+        private async void DeleteFilesButtonClick(object? sender, EventArgs e)
         {
             if (string.IsNullOrWhiteSpace(selectedFolderPath)) return;
 
@@ -358,7 +358,7 @@ namespace SCLOCUA
             else control.Click += OpenLink;
         }
 
-        private void OpenLink(object sender, EventArgs e)
+        private void OpenLink(object? sender, EventArgs e)
         {
             if (sender is Control ctrl && ctrl.Tag is string url) OpenUrl(url);
         }
@@ -423,7 +423,7 @@ namespace SCLOCUA
         }
 
         // ---- Form events ----
-        private void Form1_Load(object sender, EventArgs e)
+        private void Form1_Load(object? sender, EventArgs e)
         {
             if (!string.IsNullOrWhiteSpace(selectedFolderPath))
             {
@@ -438,13 +438,13 @@ namespace SCLOCUA
             UpdateKillFeedButtonUi(overlayForm != null && overlayForm.Visible && !overlayForm.IsDisposed);
         }
 
-        private void pictureBox2_Click(object sender, EventArgs e)
+        private void pictureBox2_Click(object? sender, EventArgs e)
         {
             OpenUrl("https://send.monobank.ua/jar/44HXkQkorg");
         }
 
         // Wiki toggle
-        private void buttonWiki_Click(object sender, EventArgs e)
+        private void buttonWiki_Click(object? sender, EventArgs e)
         {
             if (wikiForm == null || wikiForm.IsDisposed)
             {
@@ -465,7 +465,7 @@ namespace SCLOCUA
         }
 
         // Clear shaders cache
-        private void buttonClearCache_Click(object sender, EventArgs e)
+        private void buttonClearCache_Click(object? sender, EventArgs e)
         {
             try
             {
@@ -497,12 +497,12 @@ namespace SCLOCUA
         }
 
         // Anti-AFK toggle
-        private void ButtonAntiAFK_Click(object sender, EventArgs e)
+        private void ButtonAntiAFK_Click(object? sender, EventArgs e)
         {
             _antiAFK.ToggleAntiAFK(toolStripStatusLabel1);
         }
 
-        private void Form1_FormClosing(object sender, FormClosingEventArgs e)
+        private void Form1_FormClosing(object? sender, FormClosingEventArgs e)
         {
             _antiAFK.Dispose();
             // Close overlay if still open (avoid zombie handle)
@@ -510,7 +510,7 @@ namespace SCLOCUA
         }
 
         // ---- KillFeed (overlay) ----
-        private void buttonkillfeed_Click(object sender, EventArgs e)
+        private void buttonkillfeed_Click(object? sender, EventArgs e)
         {
             if (overlayForm == null || overlayForm.IsDisposed)
             {
