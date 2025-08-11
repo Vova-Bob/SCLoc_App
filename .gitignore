@@ -378,3 +378,4 @@ user.cfg
 # Additional temporary files
 *.tmp
 *.log
+dotnet/
