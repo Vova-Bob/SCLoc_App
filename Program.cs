@@ -18,8 +18,7 @@ namespace SCLOCUA
             {
                 if (!created) return;
 
-                Application.EnableVisualStyles();
-                Application.SetCompatibleTextRenderingDefault(false);
+                ApplicationConfiguration.Initialize();
 
                 var mainForm = new Form1();
 
