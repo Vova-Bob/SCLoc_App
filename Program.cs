@@ -124,58 +124,58 @@ namespace SCLOCUA
                     // ---------------------------------------------------------------------------
 
                     // Меню в треї
-                    var menu = new ContextMenu();
+                    var menu = new ContextMenuStrip();
 
-                    menu.MenuItems.Add("Відкрити", (s, e) => ShowMainWindow(mainForm));
+                    menu.Items.Add(new ToolStripMenuItem("Відкрити", null, (_, __) => ShowMainWindow(mainForm)));
 
-                    menu.MenuItems.Add("EX-Hangar (F6)", (s, e) =>
+                    menu.Items.Add(new ToolStripMenuItem("EX-Hangar (F6)", null, (_, __) =>
                     {
                         ensureOverlay();
                         if (overlay.Visible) overlay.Hide(); else overlay.Show();
-                    });
+                    }));
 
-                    menu.MenuItems.Add("Кліки «крізь» (F8)", (s, e) =>
+                    menu.Items.Add(new ToolStripMenuItem("Кліки «крізь» (F8)", null, (_, __) =>
                     {
                         ensureOverlay();
                         overlay.ToggleClickThrough();
-                    });
+                    }));
 
                     // Масштаб
-                    menu.MenuItems.Add("Менший (Ctrl+–)", (s, e) => { ensureOverlay(); overlay.ScaleDown(); });
-                    menu.MenuItems.Add("Більший до 100% (Ctrl+=)", (s, e) => { ensureOverlay(); overlay.ScaleUp(); });
-                    menu.MenuItems.Add("Масштаб 100% (Ctrl+0)", (s, e) => { ensureOverlay(); overlay.ScaleReset(); });
+                    menu.Items.Add(new ToolStripMenuItem("Менший (Ctrl+–)", null, (_, __) => { ensureOverlay(); overlay.ScaleDown(); }));
+                    menu.Items.Add(new ToolStripMenuItem("Більший до 100% (Ctrl+=)", null, (_, __) => { ensureOverlay(); overlay.ScaleUp(); }));
+                    menu.Items.Add(new ToolStripMenuItem("Масштаб 100% (Ctrl+0)", null, (_, __) => { ensureOverlay(); overlay.ScaleReset(); }));
 
                     // Прозорість
-                    menu.MenuItems.Add("Прозоріше (Ctrl+Alt+–)", (s, e) => { ensureOverlay(); overlay.OpacityDown(); });
-                    menu.MenuItems.Add("Менш прозоре (Ctrl+Alt+=)", (s, e) => { ensureOverlay(); overlay.OpacityUp(); });
-                    menu.MenuItems.Add("Прозорість 0.92 (Ctrl+Alt+0)", (s, e) => { ensureOverlay(); overlay.OpacityReset(); });
+                    menu.Items.Add(new ToolStripMenuItem("Прозоріше (Ctrl+Alt+–)", null, (_, __) => { ensureOverlay(); overlay.OpacityDown(); }));
+                    menu.Items.Add(new ToolStripMenuItem("Менш прозоре (Ctrl+Alt+=)", null, (_, __) => { ensureOverlay(); overlay.OpacityUp(); }));
+                    menu.Items.Add(new ToolStripMenuItem("Прозорість 0.92 (Ctrl+Alt+0)", null, (_, __) => { ensureOverlay(); overlay.OpacityReset(); }));
 
                     // Перевірка оновлень вручну
-                    menu.MenuItems.Add("Перевірити оновлення…", async (s, e) =>
+                    menu.Items.Add(new ToolStripMenuItem("Перевірити оновлення…", null, async (_, __) =>
                     {
                         await UpdateChecker.CheckOnceAsync(force: true);
-                    });
+                    }));
 
                     // Автозапуск
-                    var startupItem = new MenuItem("Запускати при старті");
+                    var startupItem = new ToolStripMenuItem("Запускати при старті");
                     bool startupEnabled = IsStartupEnabled();
                     startupItem.Checked = startupEnabled;
-                    startupItem.Click += (s, e) =>
+                    startupItem.Click += (_, __) =>
                     {
                         startupEnabled = !startupEnabled;
                         SetStartup(startupEnabled);
                         startupItem.Checked = startupEnabled;
                     };
-                    menu.MenuItems.Add(startupItem);
+                    menu.Items.Add(startupItem);
 
                     // Вихід
-                    menu.MenuItems.Add("Вихід", (s, e) =>
+                    menu.Items.Add(new ToolStripMenuItem("Вихід", null, (_, __) =>
                     {
                         notifyIcon.Visible = false;
                         Application.Exit();
-                    });
+                    }));
 
-                    notifyIcon.ContextMenu = menu;
+                    notifyIcon.ContextMenuStrip = menu;
 
                     // Мінімізовано — до трею
                     mainForm.Resize += (s, e) =>

@@ -20,7 +20,7 @@ namespace ExecutiveHangarOverlay
         private const int TOTAL_CYCLE = RED_PHASE + GREEN_PHASE + BLACK_PHASE;
 
         // ---- State ----
-        private readonly Timer _uiTimer;
+        private readonly System.Windows.Forms.Timer _uiTimer;
         private long _cycleStartMs;
         private readonly string[] _lights = new string[5];
         private string _status = "default";
@@ -86,7 +86,7 @@ namespace ExecutiveHangarOverlay
             };
 
             // UI timer
-            _uiTimer = new Timer { Interval = 200 };
+            _uiTimer = new System.Windows.Forms.Timer { Interval = 200 };
             _uiTimer.Tick += (_, __) =>
             {
                 UpdateModel();

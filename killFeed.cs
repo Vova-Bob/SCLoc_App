@@ -55,7 +55,7 @@ namespace SCLOCUA
 
         // State
         private readonly List<KillLine> _lines = new List<KillLine>();
-        private readonly Timer _animTimer = new Timer();
+        private readonly System.Windows.Forms.Timer _animTimer = new System.Windows.Forms.Timer();
         private string _logPath;
         private bool _visibleState = true;
         private bool _dragging;
