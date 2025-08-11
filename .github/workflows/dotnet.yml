@@ -5,21 +5,38 @@ on:
     branches: [ migration/net8-winforms ]
   pull_request:
     branches: [ migration/net8-winforms ]
+  workflow_dispatch: {}
 
 jobs:
   build:
     runs-on: windows-latest
+    env:
+      DOTNET_SKIP_FIRST_TIME_EXPERIENCE: 1
+      DOTNET_CLI_TELEMETRY_OPTOUT: 1
     steps:
     - uses: actions/checkout@v4
+
+    - name: Cache NuGet
+      uses: actions/cache@v4
+      with:
+        path: |
+          ~/.nuget/packages
+        key: nuget-${{ runner.os }}-${{ hashFiles('**/*.csproj', '**/global.json') }}
+        restore-keys: |
+          nuget-${{ runner.os }}-
+
     - uses: actions/setup-dotnet@v4
       with:
         dotnet-version: 8.0.x
+
     - name: Restore
       run: dotnet restore
+
     - name: Build
       run: dotnet build -c Release --no-restore
+
     - name: Test (if any)
       shell: pwsh
       run: |
-        $tests = Get-ChildItem -Recurse -Filter *.csproj | Select-String -SimpleMatch "<IsTestProject>true</IsTestProject>" -Quiet
-        if ($tests) { dotnet test -c Release --no-build } else { Write-Host 'No test projects found. Skipping.' }
+        $isTest = Get-ChildItem -Recurse -Filter *.csproj | Select-String -SimpleMatch "<IsTestProject>true</IsTestProject>" -Quiet
+        if ($isTest) { dotnet test -c Release --no-build } else { Write-Host 'No test projects found. Skipping.' }
