@@ -1,5 +1,6 @@
 using System;
 using System.Threading;
+using System.Threading.Tasks;
 using System.Windows.Forms;
 using Microsoft.Win32;
 using ExecutiveHangarOverlay; // HangarOverlayForm, HotkeyMessageFilter
@@ -18,8 +19,7 @@ namespace SCLOCUA
             {
                 if (!created) return;
 
-                Application.EnableVisualStyles();
-                Application.SetCompatibleTextRenderingDefault(false);
+                ApplicationConfiguration.Initialize();
 
                 var mainForm = new Form1();
 
@@ -216,7 +216,7 @@ namespace SCLOCUA
             try { action(); } catch { /* ховаємо помилку від глобального хоткея */ }
         }
 
-        private static async System.Threading.Tasks.Task SafeInvokeAsync(Func<System.Threading.Tasks.Task> action)
+        private static async Task SafeInvokeAsync(Func<Task> action)
         {
             try { await action(); } catch { /* ігноруємо помилки у фонових задачах */ }
         }

@@ -1,3 +1,4 @@
+﻿#if FEATURE_OVERLAY
 // GlobalHotkey.cs
 using System;
 using System.Runtime.InteropServices;
@@ -144,3 +145,5 @@ namespace ExecutiveHangarOverlay
         }
     }
 }
+
+#endif
