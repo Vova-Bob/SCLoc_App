@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk.WindowsDesktop">
+<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <OutputType>WinExe</OutputType>
     <TargetFramework>net8.0-windows</TargetFramework>
@@ -10,8 +10,10 @@
     <StartupObject>SCLOCUA.Program</StartupObject>
     <ApplicationManifest>Properties\app.manifest</ApplicationManifest>
     <LangVersion>7.3</LangVersion>
-    <ImplicitUsings>disable</ImplicitUsings>
-    <Nullable>disable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <SupportedOSPlatformVersion>6.1</SupportedOSPlatformVersion>
+    <NoWarn>$(NoWarn);CA1416</NoWarn>
     <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
   </PropertyGroup>
   <PropertyGroup>
