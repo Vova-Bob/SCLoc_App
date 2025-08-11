@@ -1,3 +1,4 @@
+﻿#if FEATURE_OVERLAY
 using System;
 using System.Drawing;
 using System.Runtime.InteropServices;
@@ -512,3 +513,5 @@ namespace ExecutiveHangarOverlay
         }
     }
 }
+
+#endif

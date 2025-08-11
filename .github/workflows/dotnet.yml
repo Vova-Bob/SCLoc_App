@@ -1,0 +1,25 @@
+name: CI
+
+on:
+  push:
+    branches: [ migration/net8-winforms ]
+  pull_request:
+    branches: [ migration/net8-winforms ]
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+    - uses: actions/checkout@v4
+    - uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: 8.0.x
+    - name: Restore
+      run: dotnet restore
+    - name: Build
+      run: dotnet build -c Release --no-restore
+    - name: Test (if any)
+      shell: pwsh
+      run: |
+        $tests = Get-ChildItem -Recurse -Filter *.csproj | Select-String -SimpleMatch "<IsTestProject>true</IsTestProject>" -Quiet
+        if ($tests) { dotnet test -c Release --no-build } else { Write-Host 'No test projects found. Skipping.' }
