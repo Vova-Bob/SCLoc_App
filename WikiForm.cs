@@ -27,7 +27,7 @@ namespace SCLOCUA
             richTextBox1.MouseWheel += richTextBox1_MouseWheel; // Додано обробник прокручування миші для richTextBox1
         }
 
-        private async void WikiForm_Load(object sender, EventArgs e)
+        private async void WikiForm_Load(object? sender, EventArgs e)
         {
             button1.Enabled = false;
             string wikiText = await DownloadWikiTextAsync(WikiUrl);
@@ -115,7 +115,7 @@ namespace SCLOCUA
         }
 
         // Обробка натискання кнопки пошуку
-        private void button1_Click(object sender, EventArgs e)
+        private void button1_Click(object? sender, EventArgs e)
         {
             string searchTerm = textBox1.Text.Trim().ToUpperInvariant();
 
@@ -136,7 +136,7 @@ namespace SCLOCUA
         }
 
         // Обробка натискання Enter у текстовому полі
-        private void textBox1_KeyDown(object sender, KeyEventArgs e)
+        private void textBox1_KeyDown(object? sender, KeyEventArgs e)
         {
             if (e.KeyCode == Keys.Enter)
             {
@@ -158,7 +158,7 @@ namespace SCLOCUA
         }
 
         // Обробка прокручування миші в textBox1
-        private void textBox1_MouseWheel(object sender, MouseEventArgs e)
+        private void textBox1_MouseWheel(object? sender, MouseEventArgs e)
         {
             if (e.Delta > 0) // Прокручування вгору
             {
@@ -181,7 +181,7 @@ namespace SCLOCUA
         }
 
         // Обробка прокручування миші в richTextBox1
-        private void richTextBox1_MouseWheel(object sender, MouseEventArgs e)
+        private void richTextBox1_MouseWheel(object? sender, MouseEventArgs e)
         {
             if (e.Delta > 0) // Прокручування вгору
             {

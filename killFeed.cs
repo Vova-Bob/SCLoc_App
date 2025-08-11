@@ -230,7 +230,7 @@ namespace SCLOCUA
             catch { }
         }
 
-        private void OnClosing(object s, FormClosingEventArgs e)
+        private void OnClosing(object? s, FormClosingEventArgs e)
         {
             _animTimer.Stop();
             UnregisterHotKey(this.Handle, HOTKEY_TOGGLE);

@@ -15,3 +15,11 @@
 
 ## Скріншоти
 ![Головне вікно](img/sclocua.jpg)
+
+## Running tests
+
+```bash
+dotnet restore
+dotnet build
+dotnet test
+```

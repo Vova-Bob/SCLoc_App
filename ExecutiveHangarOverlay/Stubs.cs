@@ -60,6 +60,7 @@ namespace ExecutiveHangarOverlay
 
     public sealed class HotkeyMessageFilter : IDisposable
     {
+        #pragma warning disable CS0067
         public event Action OnToggleOverlay;
         public event Action OnToggleClickThrough;
         public event Action OnBeginTempDrag;
@@ -73,6 +74,7 @@ namespace ExecutiveHangarOverlay
         public event Action OnOpacityDown;
         public event Action OnOpacityUp;
         public event Action OnOpacityReset;
+        #pragma warning restore CS0067
 
         private readonly IntPtr _handle;
         public HotkeyMessageFilter(IntPtr handle) { _handle = handle; }
