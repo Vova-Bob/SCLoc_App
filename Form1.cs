@@ -29,7 +29,10 @@ namespace SCLOCUA
 
         public Form1()
         {
+            SuspendLayout();
             InitializeComponent();
+            SetStyle(ControlStyles.OptimizedDoubleBuffer | ControlStyles.AllPaintingInWmPaint, true);
+            UpdateStyles();
 
             // Shared HttpClient from your project
             httpClient = HttpClientService.Client;
@@ -61,6 +64,8 @@ namespace SCLOCUA
 
             InitializeUI();
             InitializeEvents();
+
+            ResumeLayout();
         }
 
         // ---- Initial UI state ----

@@ -65,11 +65,13 @@ namespace SCLOCUA
 
         public killFeed(string folderPath)
         {
+            SuspendLayout();
             InitializeComponent();
 
             // Transparent form (only bubbles are drawn by children)
             this.DoubleBuffered = true;
             this.SetStyle(ControlStyles.OptimizedDoubleBuffer | ControlStyles.AllPaintingInWmPaint, true);
+            UpdateStyles();
             Color key = Color.Lime;
             this.BackColor = key;
             this.TransparencyKey = key;
@@ -106,6 +108,8 @@ namespace SCLOCUA
 
             // Start tailing
             _ = TailAsync();
+
+            ResumeLayout();
         }
 
         // inside class killFeed

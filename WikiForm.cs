@@ -18,13 +18,17 @@ namespace SCLOCUA
 
         public WikiForm()
         {
+            SuspendLayout();
             InitializeComponent();
+            SetStyle(ControlStyles.OptimizedDoubleBuffer | ControlStyles.AllPaintingInWmPaint, true);
+            UpdateStyles();
             client = HttpClientService.Client;
             button1.Click += button1_Click;
             this.Load += WikiForm_Load;
             textBox1.KeyDown += textBox1_KeyDown;
             textBox1.MouseWheel += textBox1_MouseWheel; // Додано обробник прокручування миші для textBox1
             richTextBox1.MouseWheel += richTextBox1_MouseWheel; // Додано обробник прокручування миші для richTextBox1
+            ResumeLayout();
         }
 
         private async void WikiForm_Load(object sender, EventArgs e)
