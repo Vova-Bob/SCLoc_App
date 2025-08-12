@@ -4,6 +4,7 @@ using System.Threading.Tasks;
 using System.Windows.Forms;
 using Microsoft.Win32;
 using ExecutiveHangarOverlay; // HangarOverlayForm, HotkeyMessageFilter
+using ApplicationConfiguration = SCLOCUA.Manual.ApplicationConfiguration;
 
 namespace SCLOCUA
 {
