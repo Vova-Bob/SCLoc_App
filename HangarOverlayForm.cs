@@ -76,9 +76,11 @@ namespace ExecutiveHangarOverlay
             FormBorderStyle = FormBorderStyle.None;
             StartPosition = FormStartPosition.CenterScreen;
             TopMost = true;
-            DoubleBuffered = true;
-            SetStyle(ControlStyles.OptimizedDoubleBuffer | ControlStyles.AllPaintingInWmPaint, true);
-            UpdateStyles();
+            this.DoubleBuffered = true;
+            // Reduce flicker on high DPI
+            this.SetStyle(System.Windows.Forms.ControlStyles.OptimizedDoubleBuffer |
+                          System.Windows.Forms.ControlStyles.AllPaintingInWmPaint, true);
+            this.UpdateStyles();
             BackColor = Color.FromArgb(18, 18, 18);
             Opacity = _targetOpacity;
             ClientSize = new Size(BASE_W, BASE_H);
@@ -461,8 +463,10 @@ namespace ExecutiveHangarOverlay
             StartPosition = FormStartPosition.CenterParent;
             ClientSize = new Size(420, 170);
             MaximizeBox = MinimizeBox = false;
-            SetStyle(ControlStyles.OptimizedDoubleBuffer | ControlStyles.AllPaintingInWmPaint, true);
-            UpdateStyles();
+            // Reduce flicker on high DPI
+            this.SetStyle(System.Windows.Forms.ControlStyles.OptimizedDoubleBuffer |
+                          System.Windows.Forms.ControlStyles.AllPaintingInWmPaint, true);
+            this.UpdateStyles();
 
             _box = new TextBox { Left = 15, Top = 15, Width = 390 };
 

@@ -15,6 +15,8 @@
     <SupportedOSPlatformVersion>6.1</SupportedOSPlatformVersion>
     <NoWarn>$(NoWarn);CA1416</NoWarn>
     <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <AnalysisLevel>latest</AnalysisLevel>
   </PropertyGroup>
   <PropertyGroup>
     <DefineConstants>TRACE;RELEASE;FEATURE_OVERLAY</DefineConstants>
