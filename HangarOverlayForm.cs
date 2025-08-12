@@ -68,6 +68,7 @@ namespace ExecutiveHangarOverlay
 
         public HangarOverlayForm(long cycleStartMs)
         {
+            SuspendLayout();
             _cycleStartMs = cycleStartMs;
 
             // Form setup
@@ -76,6 +77,8 @@ namespace ExecutiveHangarOverlay
             StartPosition = FormStartPosition.CenterScreen;
             TopMost = true;
             DoubleBuffered = true;
+            SetStyle(ControlStyles.OptimizedDoubleBuffer | ControlStyles.AllPaintingInWmPaint, true);
+            UpdateStyles();
             BackColor = Color.FromArgb(18, 18, 18);
             Opacity = _targetOpacity;
             ClientSize = new Size(BASE_W, BASE_H);
@@ -111,6 +114,8 @@ namespace ExecutiveHangarOverlay
             _uiTimer.Start();
 
             UpdateModel();
+
+            ResumeLayout();
         }
 
         // ===== Public API: called from Program.cs via global hotkeys =====
@@ -450,11 +455,14 @@ namespace ExecutiveHangarOverlay
 
         public InputMsDialog()
         {
+            SuspendLayout();
             Text = "Введіть час старту";
             FormBorderStyle = FormBorderStyle.FixedDialog;
             StartPosition = FormStartPosition.CenterParent;
             ClientSize = new Size(420, 170);
             MaximizeBox = MinimizeBox = false;
+            SetStyle(ControlStyles.OptimizedDoubleBuffer | ControlStyles.AllPaintingInWmPaint, true);
+            UpdateStyles();
 
             _box = new TextBox { Left = 15, Top = 15, Width = 390 };
 
@@ -466,7 +474,7 @@ namespace ExecutiveHangarOverlay
                 Height = 70,
                 AutoSize = false,
                 Text =
-    @"Приклади:
+@"Приклади:
 • 1753997899074       (UNIX мс)
 • 15:52 або 15:52:39  (сьогодні, локальний час)",
             };
@@ -479,6 +487,7 @@ namespace ExecutiveHangarOverlay
             CancelButton = cancel;
 
             _box.Text = DateTime.Now.ToString("HH:mm:ss");
+            ResumeLayout();
         }
 
         protected override void OnFormClosing(FormClosingEventArgs e)
