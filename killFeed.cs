@@ -70,8 +70,10 @@ namespace SCLOCUA
 
             // Transparent form (only bubbles are drawn by children)
             this.DoubleBuffered = true;
-            this.SetStyle(ControlStyles.OptimizedDoubleBuffer | ControlStyles.AllPaintingInWmPaint, true);
-            UpdateStyles();
+            // Reduce flicker on high DPI
+            this.SetStyle(System.Windows.Forms.ControlStyles.OptimizedDoubleBuffer |
+                          System.Windows.Forms.ControlStyles.AllPaintingInWmPaint, true);
+            this.UpdateStyles();
             Color key = Color.Lime;
             this.BackColor = key;
             this.TransparencyKey = key;

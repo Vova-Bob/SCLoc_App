@@ -31,8 +31,10 @@ namespace SCLOCUA
         {
             SuspendLayout();
             InitializeComponent();
-            SetStyle(ControlStyles.OptimizedDoubleBuffer | ControlStyles.AllPaintingInWmPaint, true);
-            UpdateStyles();
+            // Reduce flicker on high DPI
+            this.SetStyle(System.Windows.Forms.ControlStyles.OptimizedDoubleBuffer |
+                          System.Windows.Forms.ControlStyles.AllPaintingInWmPaint, true);
+            this.UpdateStyles();
 
             // Shared HttpClient from your project
             httpClient = HttpClientService.Client;

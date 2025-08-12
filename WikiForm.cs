@@ -20,8 +20,10 @@ namespace SCLOCUA
         {
             SuspendLayout();
             InitializeComponent();
-            SetStyle(ControlStyles.OptimizedDoubleBuffer | ControlStyles.AllPaintingInWmPaint, true);
-            UpdateStyles();
+            // Reduce flicker on high DPI
+            this.SetStyle(System.Windows.Forms.ControlStyles.OptimizedDoubleBuffer |
+                          System.Windows.Forms.ControlStyles.AllPaintingInWmPaint, true);
+            this.UpdateStyles();
             client = HttpClientService.Client;
             button1.Click += button1_Click;
             this.Load += WikiForm_Load;

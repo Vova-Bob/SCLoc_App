@@ -1,5 +1,5 @@
 #if FEATURE_OVERLAY
-﻿// StartTimeProvider.cs (Newtonsoft.Json, .NET Framework 4.8)
+// StartTimeProvider.cs (Newtonsoft.Json, .NET Framework 4.8)
 using System;
 using System.Net;
 using System.Net.Http;
