@@ -52,8 +52,19 @@ namespace ExecutiveHangarOverlay
         private const int WS_EX_LAYERED = 0x80000;
         private const int WS_EX_TRANSPARENT = 0x20;
 
-        [DllImport("user32.dll")] private static extern int GetWindowLong(IntPtr hWnd, int nIndex);
-        [DllImport("user32.dll")] private static extern int SetWindowLong(IntPtr hWnd, int nIndex, int dwNewLong);
+        [DllImport("user32.dll", EntryPoint = "GetWindowLong")]
+        private static extern nint GetWindowLongPtr32(IntPtr hWnd, int nIndex);
+        [DllImport("user32.dll", EntryPoint = "GetWindowLongPtr")]
+        private static extern nint GetWindowLongPtr64(IntPtr hWnd, int nIndex);
+        private static nint GetWindowLongPtr(IntPtr hWnd, int nIndex) =>
+            IntPtr.Size == 8 ? GetWindowLongPtr64(hWnd, nIndex) : GetWindowLongPtr32(hWnd, nIndex);
+
+        [DllImport("user32.dll", EntryPoint = "SetWindowLong")]
+        private static extern nint SetWindowLongPtr32(IntPtr hWnd, int nIndex, nint dwNewLong);
+        [DllImport("user32.dll", EntryPoint = "SetWindowLongPtr")]
+        private static extern nint SetWindowLongPtr64(IntPtr hWnd, int nIndex, nint dwNewLong);
+        private static nint SetWindowLongPtr(IntPtr hWnd, int nIndex, nint dwNewLong) =>
+            IntPtr.Size == 8 ? SetWindowLongPtr64(hWnd, nIndex, dwNewLong) : SetWindowLongPtr32(hWnd, nIndex, dwNewLong);
 
         public HangarOverlayForm(long cycleStartMs)
         {
@@ -203,10 +214,10 @@ namespace ExecutiveHangarOverlay
 
         private void ApplyClickThrough(bool enabled)
         {
-            int ex = GetWindowLong(Handle, GWL_EXSTYLE);
-            if (enabled) ex |= (WS_EX_TRANSPARENT | WS_EX_LAYERED);
+            nint ex = GetWindowLongPtr(Handle, GWL_EXSTYLE);
+            if (enabled) ex |= WS_EX_TRANSPARENT | WS_EX_LAYERED;
             else ex = (ex | WS_EX_LAYERED) & ~WS_EX_TRANSPARENT;
-            SetWindowLong(Handle, GWL_EXSTYLE, ex);
+            SetWindowLongPtr(Handle, GWL_EXSTYLE, ex);
         }
 
         private void UpdateModel()
