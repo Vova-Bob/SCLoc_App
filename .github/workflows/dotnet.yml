@@ -1,11 +1,7 @@
 name: CI
 
 on:
-  push:
-    branches: [ migration/net8-winforms ]
-  pull_request:
-    branches: [ migration/net8-winforms ]
-  workflow_dispatch: {}
+  workflow_dispatch: {} # Manual run only
 
 jobs:
   build:
