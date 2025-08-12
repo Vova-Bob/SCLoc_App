@@ -1,8 +1,9 @@
-<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk.WindowsDesktop">
   <PropertyGroup>
     <OutputType>WinExe</OutputType>
-    <TargetFramework>net8.0-windows</TargetFramework>
+    <TargetFramework>net8.0-windows7.0</TargetFramework>
     <UseWindowsForms>true</UseWindowsForms>
+    <HighDpiMode>PerMonitorV2</HighDpiMode>
     <EnableWindowsTargeting>true</EnableWindowsTargeting>
     <RootNamespace>SCLOCUA</RootNamespace>
     <AssemblyName>SCLocalizationUA</AssemblyName>
@@ -17,6 +18,9 @@
   </PropertyGroup>
   <PropertyGroup>
     <DefineConstants>TRACE;RELEASE</DefineConstants>
+  </PropertyGroup>
+  <PropertyGroup>
+    <DefineConstants>$(DefineConstants);FEATURE_OVERLAY</DefineConstants>
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
