@@ -2,14 +2,11 @@
 [![SCLocalizationUA](https://img.shields.io/github/release/Vova-Bob/SCLoc_App?include_prereleases&sort=date&label=SCLocalizationUA)](https://github.com/Vova-Bob/SCLoc_App/releases/latest)
 [![Crowdin](https://badges.crowdin.net/star-citizen-localization-ua/localized.svg)](https://shorturl.at/dopMW)
 [![Visitors](https://api.visitorbadge.io/api/visitors?path=Vova-Bob%2FSCLoc_App&labelColor=%2337d67a&countColor=%23263759&style=plastic&labelStyle=lower)](https://visitorbadge.io/status?path=Vova-Bob%2FSCLoc_App)
-[![Website](https://img.shields.io/website?url=https%3A%2F%2Fusf.42web.io%2F&down_message=SITE&style=flat&label=USF&labelColor=blue&color=yellow)](https://usf.42web.io/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://github.com/Vova-Bob/SCLoc_App/blob/main/LICENSE)
 [![Virustotal](https://img.shields.io/static/v1?label=Virustotal&message=Scan&color=blue)](https://www.virustotal.com/gui/file/709552463786858d54e9285df1e69d8f4acd9130a614b42f4490344b8f7fb70a?nocache=1)
-![SClocApp](https://github.com/Vova-Bob/SCLoc_App/blob/main/img/sclocua.jpg)
+![SClocApp](https://github.com/Vova-Bob/SCLoc_App/blob/main/img/sclocuajpg)
 
 Додаток для локалізації гри Star Citizen Українською
-
-Підтримка Української локалізації гри зроблена учасниками [UKRAINIAN SPACE FLEET](https://robertsspaceindustries.com/orgs/UKR)
 
 [![Website](https://img.shields.io/website?url=https%3A%2F%2Fsend.monobank.ua%2Fjar%2F44HXkQkorg&up_message=%D0%9F%D1%80%D0%BE%D0%B5%D0%BA%D1%82&style=for-the-badge&label=%D0%9F%D1%96%D0%B4%D1%82%D1%80%D0%B8%D0%BC%D0%B0%D1%82%D0%B8)
 ](https://send.monobank.ua/jar/44HXkQkorg)
@@ -33,7 +30,7 @@
 4. Включіть прапорець `user.cfg` якщо у вас не має цього файлу (конфігурації користувача) або створіть його власноруч з [інструкції](https://github.com/Vova-Bob/SC_localization_UA)
 5. Натисніть кнопку "встановити локалізацію"
    
-![Опис зображення](https://github.com/Vova-Bob/SCLoc_App/blob/main/img/8.png)
+![Опис зображення](https://github.com/Vova-Bob/SCLoc_App/blob/main/img/8png)
 
 ---
 
