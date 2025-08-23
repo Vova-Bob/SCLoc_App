@@ -30,6 +30,8 @@ namespace SCLOCUA
         public Form1()
         {
             InitializeComponent();
+            // Apply consistent fonts and rendering
+            ThemeHelper.ApplyTheme(this);
 
             // Shared HttpClient from your project
             httpClient = HttpClientService.Client;

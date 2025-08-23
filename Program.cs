@@ -19,7 +19,10 @@ namespace SCLOCUA
             {
                 if (!created) return;
 
-                ApplicationConfiguration.Initialize();
+                // High DPI awareness and consistent rendering
+                Application.SetHighDpiMode(HighDpiMode.PerMonitorV2);
+                Application.EnableVisualStyles();
+                Application.SetCompatibleTextRenderingDefault(false);
 
                 var mainForm = new Form1();
 
