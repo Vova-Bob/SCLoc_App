@@ -244,6 +244,7 @@ namespace SCLOCUA
         {
             public string T; public string Killer; public string Victim; public bool Suicide;
         }
+
         private KillData Parse(string line)
         {
             var tm = Regex.Match(line, @"<(\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z)>");
@@ -256,11 +257,35 @@ namespace SCLOCUA
 
             string victim = m.Groups[1].Value;
             string killer = m.Groups[2].Value;
-            if (killer.Equals("unknown", StringComparison.OrdinalIgnoreCase)) return null;
-            if (!IsPlayer(victim) || !IsPlayer(killer)) return null;
 
-            return new KillData { T = ts.ToLocalTime().ToString("HH:mm"), Killer = killer, Victim = victim, Suicide = (victim == killer) };
+            // --- minimal add: cheap non-player screen here (keeps your structure) ---
+            // Tokens that mark non-player names (extend as needed)
+            // Kept here to avoid changing IsPlayer() globally.
+            string[] nonPlayerTokens = { "NPC", "BOT", "KOPION", "IRRADIATED", "PU_", "TURRET" };
+
+            // Small local helper; simple and fast
+            bool IsNonPlayer(string s)
+            {
+                if (string.IsNullOrWhiteSpace(s)) return true; // treat empty as non-player
+                foreach (var t in nonPlayerTokens)
+                    if (s.IndexOf(t, StringComparison.OrdinalIgnoreCase) >= 0)
+                        return true;
+                return false;
+            }
+
+            if (killer.Equals("unknown", StringComparison.OrdinalIgnoreCase)) return null;
+            if (IsNonPlayer(victim) || IsNonPlayer(killer)) return null; // filter e.g. "Kopion_Irradiated_*"
+            if (!IsPlayer(victim) || !IsPlayer(killer)) return null;     // keep your existing rule
+
+            return new KillData
+            {
+                T = ts.ToLocalTime().ToString("HH:mm"),
+                Killer = killer,
+                Victim = victim,
+                Suicide = (victim == killer)
+            };
         }
+
         private bool IsPlayer(string name) { return !string.IsNullOrEmpty(name) && name.IndexOf("NPC", StringComparison.OrdinalIgnoreCase) < 0; }
 
         // ===== One line control with its own fade =====
