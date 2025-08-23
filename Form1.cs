@@ -30,6 +30,7 @@ namespace SCLOCUA
         public Form1()
         {
             InitializeComponent();
+            UI.UiFix.Apply(this);
 
             // Shared HttpClient from your project
             httpClient = HttpClientService.Client;
