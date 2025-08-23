@@ -194,11 +194,14 @@
             this.buttonkillfeed.Click += new System.EventHandler(this.buttonkillfeed_Click);
             // 
             // Form1
-            // 
+            //
             resources.ApplyResources(this, "$this");
-            this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
+            this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Dpi;
+            this.Font = new System.Drawing.Font("Segoe UI", 9F);
+            this.DoubleBuffered = true;
             this.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(0)))), ((int)(((byte)(31)))), ((int)(((byte)(51)))));
             this.BackgroundImage = global::SCLOCUA.Properties.Resources.launcher2_1;
+            this.BackgroundImageLayout = System.Windows.Forms.ImageLayout.Zoom;
             this.Controls.Add(this.buttonkillfeed);
             this.Controls.Add(this.buttonAntiAFK);
             this.Controls.Add(this.buttonClearCache);

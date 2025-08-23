@@ -8,6 +8,8 @@ using Newtonsoft.Json.Linq;
 using System.Drawing;
 using System.Diagnostics; // ProcessStartInfo
 
+#nullable enable
+
 namespace SCLOCUA
 {
     public partial class Form1 : Form
@@ -20,16 +22,18 @@ namespace SCLOCUA
         private const string GithubReleasesApiUrl = "https://api.github.com/repos/Vova-Bob/SC_localization_UA/releases";
 
         // ---- Fields ----
-        private WikiForm wikiForm = null;
+        private WikiForm? wikiForm;
         private readonly HttpClient httpClient;
         private readonly ToolTip toolTip = new ToolTip();
         private string selectedFolderPath = "";
         private AntiAFK _antiAFK;
-        private killFeed overlayForm; // overlay window
+        private killFeed? overlayForm; // overlay window
 
         public Form1()
         {
             InitializeComponent();
+            // Apply consistent fonts and rendering
+            ThemeHelper.ApplyTheme(this);
 
             // Shared HttpClient from your project
             httpClient = HttpClientService.Client;
@@ -101,7 +105,7 @@ namespace SCLOCUA
         }
 
         // ---- Select game folder ----
-        private void SelectFolderButtonClick(object sender, EventArgs e)
+        private void SelectFolderButtonClick(object? sender, EventArgs e)
         {
             using (var folderDialog = new FolderBrowserDialog())
             {
@@ -127,7 +131,7 @@ namespace SCLOCUA
         }
 
         // ---- Install/Update localization ----
-        private async void UpdateLocalizationButtonClick(object sender, EventArgs e)
+        private async void UpdateLocalizationButtonClick(object? sender, EventArgs e)
         {
             if (string.IsNullOrWhiteSpace(selectedFolderPath) || !Directory.Exists(selectedFolderPath))
             {
@@ -255,14 +259,14 @@ namespace SCLOCUA
                 }
 
                 // First prerelease if any
-                foreach (var r in releases)
-                {
-                    if (r.Value<bool?>("prerelease") == true)
-                        return r.Value<string>("tag_name");
-                }
+                    foreach (var r in releases)
+                    {
+                        if (r.Value<bool?>("prerelease") == true)
+                            return r.Value<string>("tag_name") ?? string.Empty;
+                    }
 
-                // Otherwise first stable release
-                return releases[0].Value<string>("tag_name");
+                    // Otherwise first stable release
+                    return releases[0].Value<string>("tag_name") ?? string.Empty;
             }
             catch (Exception ex)
             {
@@ -281,12 +285,12 @@ namespace SCLOCUA
         // Download file to path
         private async Task DownloadFileAsync(string url, string filePath)
         {
-            try
-            {
-                byte[] data = await httpClient.GetByteArrayAsync(url);
-                string dir = Path.GetDirectoryName(filePath);
+                try
+                {
+                    byte[] data = await httpClient.GetByteArrayAsync(url);
+                    string dir = Guard.NotNull(Path.GetDirectoryName(filePath), nameof(filePath));
 
-                if (!Directory.Exists(dir)) Directory.CreateDirectory(dir);
+                    if (!Directory.Exists(dir)) Directory.CreateDirectory(dir);
 
                 using (var fs = new FileStream(filePath, FileMode.Create, FileAccess.Write, FileShare.None, 8192, true))
                 {
@@ -304,7 +308,7 @@ namespace SCLOCUA
         }
 
         // ---- Delete localization files ----
-        private async void DeleteFilesButtonClick(object sender, EventArgs e)
+        private async void DeleteFilesButtonClick(object? sender, EventArgs e)
         {
             if (string.IsNullOrWhiteSpace(selectedFolderPath)) return;
 
@@ -354,11 +358,16 @@ namespace SCLOCUA
         private void AssignLink(Control control, string url)
         {
             control.Tag = url;
-            if (control is LinkLabel ll) ll.LinkClicked += OpenLink;
-            else control.Click += OpenLink;
+              if (control is LinkLabel ll) ll.LinkClicked += OpenLink;
+              else control.Click += OpenLinkFromButton;
         }
 
-        private void OpenLink(object sender, EventArgs e)
+        private void OpenLink(object? sender, LinkLabelLinkClickedEventArgs e)
+        {
+            if (sender is Control ctrl && ctrl.Tag is string url) OpenUrl(url);
+        }
+
+        private void OpenLinkFromButton(object? sender, EventArgs e)
         {
             if (sender is Control ctrl && ctrl.Tag is string url) OpenUrl(url);
         }
@@ -423,7 +432,7 @@ namespace SCLOCUA
         }
 
         // ---- Form events ----
-        private void Form1_Load(object sender, EventArgs e)
+        private void Form1_Load(object? sender, EventArgs e)
         {
             if (!string.IsNullOrWhiteSpace(selectedFolderPath))
             {
@@ -438,13 +447,13 @@ namespace SCLOCUA
             UpdateKillFeedButtonUi(overlayForm != null && overlayForm.Visible && !overlayForm.IsDisposed);
         }
 
-        private void pictureBox2_Click(object sender, EventArgs e)
+        private void pictureBox2_Click(object? sender, EventArgs e)
         {
             OpenUrl("https://send.monobank.ua/jar/44HXkQkorg");
         }
 
         // Wiki toggle
-        private void buttonWiki_Click(object sender, EventArgs e)
+        private void buttonWiki_Click(object? sender, EventArgs e)
         {
             if (wikiForm == null || wikiForm.IsDisposed)
             {
@@ -465,7 +474,7 @@ namespace SCLOCUA
         }
 
         // Clear shaders cache
-        private void buttonClearCache_Click(object sender, EventArgs e)
+        private void buttonClearCache_Click(object? sender, EventArgs e)
         {
             try
             {
@@ -497,12 +506,12 @@ namespace SCLOCUA
         }
 
         // Anti-AFK toggle
-        private void ButtonAntiAFK_Click(object sender, EventArgs e)
+        private void ButtonAntiAFK_Click(object? sender, EventArgs e)
         {
             _antiAFK.ToggleAntiAFK(toolStripStatusLabel1);
         }
 
-        private void Form1_FormClosing(object sender, FormClosingEventArgs e)
+        private void Form1_FormClosing(object? sender, FormClosingEventArgs e)
         {
             _antiAFK.Dispose();
             // Close overlay if still open (avoid zombie handle)
@@ -510,7 +519,7 @@ namespace SCLOCUA
         }
 
         // ---- KillFeed (overlay) ----
-        private void buttonkillfeed_Click(object sender, EventArgs e)
+        private void buttonkillfeed_Click(object? sender, EventArgs e)
         {
             if (overlayForm == null || overlayForm.IsDisposed)
             {

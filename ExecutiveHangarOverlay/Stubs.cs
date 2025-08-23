@@ -7,6 +7,8 @@ using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 
+#nullable enable
+
 namespace ExecutiveHangarOverlay
 {
     // Provides async "start time" value
@@ -60,19 +62,19 @@ namespace ExecutiveHangarOverlay
 
     public sealed class HotkeyMessageFilter : IDisposable
     {
-        public event Action OnToggleOverlay;
-        public event Action OnToggleClickThrough;
-        public event Action OnBeginTempDrag;
-        public event Action OnSetStartNow;
-        public event Action OnPromptManualStart;
-        public event Func<Task> OnForceSync;
-        public event Func<Task> OnClearOverrideAndSync;
-        public event Action OnScaleDown;
-        public event Action OnScaleUp;
-        public event Action OnScaleReset;
-        public event Action OnOpacityDown;
-        public event Action OnOpacityUp;
-        public event Action OnOpacityReset;
+        public event Action? OnToggleOverlay;
+        public event Action? OnToggleClickThrough;
+        public event Action? OnBeginTempDrag;
+        public event Action? OnSetStartNow;
+        public event Action? OnPromptManualStart;
+        public event Func<Task>? OnForceSync;
+        public event Func<Task>? OnClearOverrideAndSync;
+        public event Action? OnScaleDown;
+        public event Action? OnScaleUp;
+        public event Action? OnScaleReset;
+        public event Action? OnOpacityDown;
+        public event Action? OnOpacityUp;
+        public event Action? OnOpacityReset;
 
         private readonly IntPtr _handle;
         public HotkeyMessageFilter(IntPtr handle) { _handle = handle; }

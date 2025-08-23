@@ -1,4 +1,5 @@
-﻿// UpdateChecker.cs (.NET Framework 4.8, Newtonsoft.Json)
+﻿#nullable enable
+// UpdateChecker.cs (.NET Framework 4.8, Newtonsoft.Json)
 using System;
 using System.Diagnostics;
 using System.IO;
@@ -68,19 +69,19 @@ namespace SCLOCUA
                         if (latest <= current) return;
 
                         // Знаходимо інсталятор за назвою
-                        var assets = (JArray)root["assets"];
-                        if (assets == null || assets.Count == 0) return;
-                        string downloadUrl = null;
-                        foreach (var a in assets)
-                        {
-                            var name = a.Value<string>("name") ?? "";
-                            if (string.Equals(name, InstallerName, StringComparison.OrdinalIgnoreCase))
-                            {
-                                downloadUrl = a.Value<string>("browser_download_url");
-                                break;
-                            }
-                        }
-                        if (string.IsNullOrEmpty(downloadUrl)) return;
+                          var assets = root["assets"] as JArray;
+                          if (assets == null || assets.Count == 0) return;
+                          string? downloadUrl = null;
+                          foreach (var a in assets)
+                          {
+                              var name = a.Value<string>("name") ?? "";
+                              if (string.Equals(name, InstallerName, StringComparison.OrdinalIgnoreCase))
+                              {
+                                  downloadUrl = a.Value<string>("browser_download_url");
+                                  break;
+                              }
+                          }
+                          if (string.IsNullOrWhiteSpace(downloadUrl)) return;
 
                         var nameTitle = root.Value<string>("name") ?? $"Реліз {tag}";
                         var body = root.Value<string>("body") ?? "";
@@ -101,7 +102,7 @@ namespace SCLOCUA
                             MessageBoxButtons.YesNo, MessageBoxIcon.Information);
 
                         if (res == DialogResult.Yes)
-                            await DownloadAndRunInstallerAsync(downloadUrl).ConfigureAwait(false);
+                              await DownloadAndRunInstallerAsync(downloadUrl).ConfigureAwait(false);
                     }
                 }
             }
