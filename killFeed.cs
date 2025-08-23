@@ -10,6 +10,8 @@ using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 
+#nullable enable
+
 namespace SCLOCUA
 {
     public partial class killFeed : Form
@@ -56,12 +58,12 @@ namespace SCLOCUA
         // State
         private readonly List<KillLine> _lines = new List<KillLine>();
         private readonly System.Windows.Forms.Timer _animTimer = new System.Windows.Forms.Timer();
-        private string _logPath;
+        private readonly string _logPath;
         private bool _visibleState = true;
         private bool _dragging;
         private Point _dragStart;
-        private SoundPlayer _player;
-        private string _wav;
+        private SoundPlayer? _player;
+        private string? _wav;
 
         public killFeed(string folderPath)
         {
@@ -89,6 +91,7 @@ namespace SCLOCUA
             this.FormClosing += OnClosing;
 
             // Log + sound
+            folderPath = Guard.NotNullOrWhiteSpace(folderPath, nameof(folderPath));
             _logPath = Path.Combine(folderPath, "game.log");
             _wav = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "killSound.wav");
             if (File.Exists(_wav)) { _player = new SoundPlayer(_wav); _player.LoadAsync(); }
@@ -230,7 +233,7 @@ namespace SCLOCUA
             catch { }
         }
 
-        private void OnClosing(object s, FormClosingEventArgs e)
+        private void OnClosing(object? s, FormClosingEventArgs e)
         {
             _animTimer.Stop();
             UnregisterHotKey(this.Handle, HOTKEY_TOGGLE);
@@ -242,10 +245,10 @@ namespace SCLOCUA
         // ===== parsing (no "(Bullet)" / damage) =====
         private sealed class KillData
         {
-            public string T; public string Killer; public string Victim; public bool Suicide;
+            public string T = string.Empty; public string Killer = string.Empty; public string Victim = string.Empty; public bool Suicide;
         }
 
-        private KillData Parse(string line)
+        private KillData? Parse(string line)
         {
             var tm = Regex.Match(line, @"<(\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z)>");
             DateTime ts;
@@ -367,7 +370,7 @@ namespace SCLOCUA
                 if (!_fadeStartUtc.HasValue) alpha = Math.Max(alpha, MIN_ALPHA);
 
                 // build segments
-                var list = new Tuple<string, Color>[]
+                var list = new Tuple<string, Color>?[]
                 {
                     Tuple.Create("["+_d.T+"]", _time),
                     _d.Suicide ? Tuple.Create(_d.Victim, _victim) : Tuple.Create(_d.Killer, _killer),
@@ -379,8 +382,9 @@ namespace SCLOCUA
                 int total = 0;
                 for (int i = 0; i < list.Length; i++)
                 {
-                    if (list[i] == null) continue;
-                    total += (int)Math.Ceiling(GetTextWidth(e.Graphics, _font, list[i].Item1)) + (i < list.Length - 1 ? GAP : 0);
+                    var item = list[i];
+                    if (item == null) continue;
+                    total += (int)Math.Ceiling(GetTextWidth(e.Graphics, _font, item.Item1)) + (i < list.Length - 1 ? GAP : 0);
                 }
                 int bubbleW = Math.Min(_maxWidth, total + PAD_X * 2);
                 int bubbleH = Height - 2;
@@ -393,16 +397,17 @@ namespace SCLOCUA
 
                 // draw segments
                 int x = PAD_X, y = PAD_Y;
-                for (int i = 0; i < list.Length; i++)
-                {
-                    if (list[i] == null) continue;
-                    using (var p = BuildTextPath(e.Graphics, _font, list[i].Item1, new Point(x, y)))
+                    for (int i = 0; i < list.Length; i++)
                     {
-                        using (var pen = new Pen(OUTLINE_COLOR, OUTLINE) { LineJoin = LineJoin.Round }) e.Graphics.DrawPath(pen, p);
-                        using (var br = new SolidBrush(list[i].Item2)) e.Graphics.FillPath(br, p);
-                        var b = p.GetBounds(); x += (int)Math.Ceiling(b.Width) + (i < list.Length - 1 ? GAP : 0);
+                        var item = list[i];
+                        if (item == null) continue;
+                        using (var p = BuildTextPath(e.Graphics, _font, item.Item1, new Point(x, y)))
+                        {
+                            using (var pen = new Pen(OUTLINE_COLOR, OUTLINE) { LineJoin = LineJoin.Round }) e.Graphics.DrawPath(pen, p);
+                            using (var br = new SolidBrush(item.Item2)) e.Graphics.FillPath(br, p);
+                            var b = p.GetBounds(); x += (int)Math.Ceiling(b.Width) + (i < list.Length - 1 ? GAP : 0);
+                        }
                     }
-                }
             }
 
             private static GraphicsPath BuildTextPath(Graphics g, Font f, string s, Point origin)

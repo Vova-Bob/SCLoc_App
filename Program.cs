@@ -5,6 +5,8 @@ using System.Windows.Forms;
 using Microsoft.Win32;
 using ExecutiveHangarOverlay; // HangarOverlayForm, HotkeyMessageFilter
 
+#nullable enable
+
 namespace SCLOCUA
 {
     static class Program
@@ -41,14 +43,15 @@ namespace SCLOCUA
                     // ---------- EX-Hangar Overlay (ліниве створення + глобальні хоткеї) ----------
                     long startMs = StartTimeProvider.ResolveAsync().GetAwaiter().GetResult();
 
-                    HangarOverlayForm overlay = null;
-                    Action ensureOverlay = () =>
+                    HangarOverlayForm? overlay = null;
+                    Func<HangarOverlayForm> ensureOverlay = () =>
                     {
                         if (overlay == null || overlay.IsDisposed)
                             overlay = new HangarOverlayForm(startMs);
+                        return overlay;
                     };
 
-                    HotkeyMessageFilter hotkey = null;
+                    HotkeyMessageFilter? hotkey = null;
 
                     // Реєструємо глобальні хоткеї коли у форми з’явився Handle
                     mainForm.HandleCreated += (s, e) =>
@@ -60,57 +63,57 @@ namespace SCLOCUA
                         // F6 — показ/приховати оверлей
                         hotkey.OnToggleOverlay += () => SafeInvoke(() =>
                         {
-                            ensureOverlay();
-                            if (overlay.Visible) overlay.Hide(); else overlay.Show();
+                            var o = ensureOverlay();
+                            if (o.Visible) o.Hide(); else o.Show();
                         });
 
                         // F8 — кліки «крізь» вікно
                         hotkey.OnToggleClickThrough += () => SafeInvoke(() =>
                         {
-                            ensureOverlay();
-                            overlay.ToggleClickThrough();
+                            var o = ensureOverlay();
+                            o.ToggleClickThrough();
                         });
 
                         // Ctrl+F8 — тимчасовий режим перетягування (коли кліки «крізь» увімкнені)
                         hotkey.OnBeginTempDrag += () => SafeInvoke(() =>
                         {
-                            ensureOverlay();
-                            overlay.BeginTemporaryDragMode();
+                            var o = ensureOverlay();
+                            o.BeginTemporaryDragMode();
                         });
 
                         // F7 / Shift+F7 — локальне встановлення старту
                         hotkey.OnSetStartNow += () => SafeInvoke(() =>
                         {
-                            ensureOverlay();
-                            overlay.SetStartNow();
+                            var o = ensureOverlay();
+                            o.SetStartNow();
                         });
                         hotkey.OnPromptManualStart += () => SafeInvoke(() =>
                         {
-                            ensureOverlay();
-                            overlay.PromptManualStart();
+                            var o = ensureOverlay();
+                            o.PromptManualStart();
                         });
 
                         // F9 / Shift+F9 — синхронізація з URL
                         hotkey.OnForceSync += async () => await SafeInvokeAsync(async () =>
                         {
-                            ensureOverlay();
-                            await overlay.ForceSyncAsync();
+                            var o = ensureOverlay();
+                            await o.ForceSyncAsync();
                         });
                         hotkey.OnClearOverrideAndSync += async () => await SafeInvokeAsync(async () =>
                         {
-                            ensureOverlay();
-                            await overlay.ClearOverrideAndSyncAsync();
+                            var o = ensureOverlay();
+                            await o.ClearOverrideAndSyncAsync();
                         });
 
                         // Масштаб
-                        hotkey.OnScaleDown += () => SafeInvoke(() => { ensureOverlay(); overlay.ScaleDown(); });
-                        hotkey.OnScaleUp += () => SafeInvoke(() => { ensureOverlay(); overlay.ScaleUp(); });
-                        hotkey.OnScaleReset += () => SafeInvoke(() => { ensureOverlay(); overlay.ScaleReset(); });
+                        hotkey.OnScaleDown += () => SafeInvoke(() => { var o = ensureOverlay(); o.ScaleDown(); });
+                        hotkey.OnScaleUp += () => SafeInvoke(() => { var o = ensureOverlay(); o.ScaleUp(); });
+                        hotkey.OnScaleReset += () => SafeInvoke(() => { var o = ensureOverlay(); o.ScaleReset(); });
 
                         // Прозорість
-                        hotkey.OnOpacityDown += () => SafeInvoke(() => { ensureOverlay(); overlay.OpacityDown(); });
-                        hotkey.OnOpacityUp += () => SafeInvoke(() => { ensureOverlay(); overlay.OpacityUp(); });
-                        hotkey.OnOpacityReset += () => SafeInvoke(() => { ensureOverlay(); overlay.OpacityReset(); });
+                        hotkey.OnOpacityDown += () => SafeInvoke(() => { var o = ensureOverlay(); o.OpacityDown(); });
+                        hotkey.OnOpacityUp += () => SafeInvoke(() => { var o = ensureOverlay(); o.OpacityUp(); });
+                        hotkey.OnOpacityReset += () => SafeInvoke(() => { var o = ensureOverlay(); o.OpacityReset(); });
                     };
 
                     // Акуратно звільняємо ресурси на виході
@@ -133,25 +136,25 @@ namespace SCLOCUA
 
                     menu.Items.Add(new ToolStripMenuItem("EX-Hangar (F6)", null, (_, __) =>
                     {
-                        ensureOverlay();
-                        if (overlay.Visible) overlay.Hide(); else overlay.Show();
+                        var o = ensureOverlay();
+                        if (o.Visible) o.Hide(); else o.Show();
                     }));
 
                     menu.Items.Add(new ToolStripMenuItem("Кліки «крізь» (F8)", null, (_, __) =>
                     {
-                        ensureOverlay();
-                        overlay.ToggleClickThrough();
+                        var o = ensureOverlay();
+                        o.ToggleClickThrough();
                     }));
 
                     // Масштаб
-                    menu.Items.Add(new ToolStripMenuItem("Менший (Ctrl+–)", null, (_, __) => { ensureOverlay(); overlay.ScaleDown(); }));
-                    menu.Items.Add(new ToolStripMenuItem("Більший до 100% (Ctrl+=)", null, (_, __) => { ensureOverlay(); overlay.ScaleUp(); }));
-                    menu.Items.Add(new ToolStripMenuItem("Масштаб 100% (Ctrl+0)", null, (_, __) => { ensureOverlay(); overlay.ScaleReset(); }));
+                    menu.Items.Add(new ToolStripMenuItem("Менший (Ctrl+–)", null, (_, __) => { var o = ensureOverlay(); o.ScaleDown(); }));
+                    menu.Items.Add(new ToolStripMenuItem("Більший до 100% (Ctrl+=)", null, (_, __) => { var o = ensureOverlay(); o.ScaleUp(); }));
+                    menu.Items.Add(new ToolStripMenuItem("Масштаб 100% (Ctrl+0)", null, (_, __) => { var o = ensureOverlay(); o.ScaleReset(); }));
 
                     // Прозорість
-                    menu.Items.Add(new ToolStripMenuItem("Прозоріше (Ctrl+Alt+–)", null, (_, __) => { ensureOverlay(); overlay.OpacityDown(); }));
-                    menu.Items.Add(new ToolStripMenuItem("Менш прозоре (Ctrl+Alt+=)", null, (_, __) => { ensureOverlay(); overlay.OpacityUp(); }));
-                    menu.Items.Add(new ToolStripMenuItem("Прозорість 0.92 (Ctrl+Alt+0)", null, (_, __) => { ensureOverlay(); overlay.OpacityReset(); }));
+                    menu.Items.Add(new ToolStripMenuItem("Прозоріше (Ctrl+Alt+–)", null, (_, __) => { var o = ensureOverlay(); o.OpacityDown(); }));
+                    menu.Items.Add(new ToolStripMenuItem("Менш прозоре (Ctrl+Alt+=)", null, (_, __) => { var o = ensureOverlay(); o.OpacityUp(); }));
+                    menu.Items.Add(new ToolStripMenuItem("Прозорість 0.92 (Ctrl+Alt+0)", null, (_, __) => { var o = ensureOverlay(); o.OpacityReset(); }));
 
                     // Перевірка оновлень вручну
                     menu.Items.Add(new ToolStripMenuItem("Перевірити оновлення…", null, async (_, __) =>
