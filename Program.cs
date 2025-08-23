@@ -230,22 +230,26 @@ namespace SCLOCUA
         // ---- Автозапуск через реєстр ----
         static bool IsStartupEnabled()
         {
-            using (RegistryKey key = Registry.CurrentUser.OpenSubKey(AppConfig.RegistryKeyPath, writable: false))
-            {
-                return key != null && key.GetValue(AppConfig.AppName) != null;
-            }
+            // OpenSubKey may return null -> use nullable + null-conditional
+            using RegistryKey? key = Registry.CurrentUser.OpenSubKey(AppConfig.RegistryKeyPath, writable: false);
+            return key?.GetValue(AppConfig.AppName) is not null;
         }
 
         static void SetStartup(bool enable)
         {
-            using (RegistryKey key = Registry.CurrentUser.OpenSubKey(AppConfig.RegistryKeyPath, writable: true))
+            if (enable)
             {
-                if (key == null) return;
-
-                if (enable)
-                    key.SetValue(AppConfig.AppName, Application.ExecutablePath);
-                else
-                    key.DeleteValue(AppConfig.AppName, false);
+                // Create (or open) the key safely; may return null in rare cases
+                using RegistryKey? key = Registry.CurrentUser.CreateSubKey(AppConfig.RegistryKeyPath);
+                if (key is null) return; // nothing we can do
+                key.SetValue(AppConfig.AppName, Application.ExecutablePath);
+            }
+            else
+            {
+                // Open for write; it can be absent
+                using RegistryKey? key = Registry.CurrentUser.OpenSubKey(AppConfig.RegistryKeyPath, writable: true);
+                // Delete value if the key exists
+                key?.DeleteValue(AppConfig.AppName, throwOnMissingValue: false);
             }
         }
     }
