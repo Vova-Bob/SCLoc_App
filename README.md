@@ -3,7 +3,7 @@
 [![Crowdin](https://badges.crowdin.net/star-citizen-localization-ua/localized.svg)](https://shorturl.at/dopMW)
 [![Visitors](https://api.visitorbadge.io/api/visitors?path=Vova-Bob%2FSCLoc_App&labelColor=%2337d67a&countColor=%23263759&style=plastic&labelStyle=lower)](https://visitorbadge.io/status?path=Vova-Bob%2FSCLoc_App)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://github.com/Vova-Bob/SCLoc_App/blob/main/LICENSE)
-[![Virustotal](https://img.shields.io/static/v1?label=Virustotal&message=Scan&color=blue)](https://www.virustotal.com/gui/file/709552463786858d54e9285df1e69d8f4acd9130a614b42f4490344b8f7fb70a?nocache=1)
+[![Virustotal](https://img.shields.io/static/v1?label=Virustotal&message=Scan&color=blue)](https://www.virustotal.com/gui/file/8e1410a6e57622f1872bce0be14d7d1b28340d6e4f5b23170052910b7fe80397?nocache=1)
 ![SClocApp](https://github.com/Vova-Bob/SCLoc_App/blob/main/img/sclocuajpg)
 
 Додаток для локалізації гри Star Citizen Українською
@@ -41,9 +41,9 @@
 
 ### Глобальні гарячі клавіші:
 - `F6` — показати/приховати оверлей  
-- `F8` — увімк./вимк. режим кліків крізь вікно  
+- `Shift+F8` — увімк./вимк. режим кліків крізь вікно  
 - `Ctrl+F8` — тимчасово вимкнути кліки крізь для перетягування  
-- `F7` — встановити старт = зараз  
+- `Ctrl+Shift+F7` — встановити старт = зараз  
 - `Shift+F7` — ввести час у форматі `HH:mm[:ss]` або Unix мс  
 - `F9` — синхронізувати з віддаленим часом  
 - `Shift+F9` — очистити локальний час та синхронізувати
