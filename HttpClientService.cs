@@ -9,14 +9,16 @@ namespace SCLOCUA
 
         static HttpClientService()
         {
-            Client = new HttpClient
-            {
-                Timeout = TimeSpan.FromSeconds(10)
-            };
+            // Ensure TLS 1.2/1.3 on older Windows
+            System.Net.ServicePointManager.SecurityProtocol =
+                System.Net.SecurityProtocolType.Tls12 | System.Net.SecurityProtocolType.Tls13;
+
+            // ? increase timeout (10s -> 30s або 60s)
+            Client = new HttpClient { Timeout = TimeSpan.FromSeconds(30) };
+
+            // GitHub requires User-Agent
             if (!Client.DefaultRequestHeaders.Contains("User-Agent"))
-            {
-                Client.DefaultRequestHeaders.Add("User-Agent", "SCLOCUA");
-            }
+                Client.DefaultRequestHeaders.Add("User-Agent", "SCLOCUA/1.0");
         }
     }
 }

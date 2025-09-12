@@ -46,5 +46,41 @@ namespace SCLOCUA.Properties {
                 this["LatestCheckedReleaseTag"] = value;
             }
         }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("-1")]
+        public int OverlayX {
+            get {
+                return ((int)(this["OverlayX"]));
+            }
+            set {
+                this["OverlayX"] = value;
+            }
+        }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("-1")]
+        public int OverlayY {
+            get {
+                return ((int)(this["OverlayY"]));
+            }
+            set {
+                this["OverlayY"] = value;
+            }
+        }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("1")]
+        public double OverlayScale {
+            get {
+                return ((double)(this["OverlayScale"]));
+            }
+            set {
+                this["OverlayScale"] = value;
+            }
+        }
     }
 }

@@ -7,13 +7,28 @@ namespace SCLOCUA
 {
     static class Program
     {
+        // ---- ЄДИНИЙ екземпляр оверлею у всьому додатку ----
+        internal static ExecutiveHangarOverlay.HangarOverlayForm Overlay;
+        internal static long HangarStartMs = -1;
+
+        // EnsureOverlay: створює/реюзає оверлей, один раз резолвить старт
+        internal static void EnsureOverlay()
+        {
+            if (HangarStartMs < 0)
+                HangarStartMs = ExecutiveHangarOverlay.StartTimeProvider
+                    .ResolveAsync().GetAwaiter().GetResult();
+
+            if (Overlay == null || Overlay.IsDisposed)
+                Overlay = new ExecutiveHangarOverlay.HangarOverlayForm(HangarStartMs);
+        }
+        // ----------------------------------------------------
+
         [STAThread]
         static void Main()
         {
             using (var mutex = new Mutex(true, "{EA6A248E-8F44-4C82-92F6-03F6A055E637}", out bool created))
             {
-                if (!created)
-                    return;
+                if (!created) return;
 
                 Application.EnableVisualStyles();
                 Application.SetCompatibleTextRenderingDefault(false);
@@ -29,7 +44,109 @@ namespace SCLOCUA
                         mainForm.WindowState = FormWindowState.Normal;
                     };
 
+                    // ---------- Глобальні гарячі клавіші -> керують одним Overlay ----------
+                    ExecutiveHangarOverlay.HotkeyMessageFilter hotkey = null;
+                    mainForm.HandleCreated += (s, e) =>
+                    {
+                        if (hotkey != null) return;
+
+                        hotkey = new ExecutiveHangarOverlay.HotkeyMessageFilter(mainForm.Handle);
+
+                        // F6 — show/hide
+                        hotkey.OnToggleOverlay += () =>
+                        {
+                            Program.EnsureOverlay();
+                            if (Program.Overlay.Visible) Program.Overlay.Hide();
+                            else Program.Overlay.Show();
+                        };
+
+                        // Shift+F8 — click-through
+                        hotkey.OnToggleClickThrough += () =>
+                        {
+                            Program.EnsureOverlay();
+                            Program.Overlay.ToggleClickThrough();
+                        };
+
+                        // Ctrl+F8 — temporary drag
+                        hotkey.OnBeginTempDrag += () =>
+                        {
+                            Program.EnsureOverlay();
+                            Program.Overlay.BeginTemporaryDragMode();
+                        };
+
+                        // Ctrl+Shift+F7 / Shift+F7
+                        hotkey.OnSetStartNow += () =>
+                        {
+                            Program.EnsureOverlay();
+                            Program.Overlay.SetStartNow();
+                        };
+                        hotkey.OnPromptManualStart += () =>
+                        {
+                            Program.EnsureOverlay();
+                            Program.Overlay.PromptManualStart();
+                        };
+
+                        // F9 / Shift+F9
+                        hotkey.OnForceSync += async () =>
+                        {
+                            Program.EnsureOverlay();
+                            await Program.Overlay.ForceSyncAsync();
+                        };
+                        hotkey.OnClearOverrideAndSync += async () =>
+                        {
+                            Program.EnsureOverlay();
+                            await Program.Overlay.ClearOverrideAndSyncAsync();
+                        };
+
+                        // Scale
+                        hotkey.OnScaleDown += () => { Program.EnsureOverlay(); Program.Overlay.ScaleDown(); };
+                        hotkey.OnScaleUp += () => { Program.EnsureOverlay(); Program.Overlay.ScaleUp(); };
+                        hotkey.OnScaleReset += () => { Program.EnsureOverlay(); Program.Overlay.ScaleReset(); };
+
+                        // Opacity
+                        hotkey.OnOpacityDown += () => { Program.EnsureOverlay(); Program.Overlay.OpacityDown(); };
+                        hotkey.OnOpacityUp += () => { Program.EnsureOverlay(); Program.Overlay.OpacityUp(); };
+                        hotkey.OnOpacityReset += () => { Program.EnsureOverlay(); Program.Overlay.OpacityReset(); };
+                    };
+
+                    Application.ApplicationExit += (s, e) =>
+                    {
+                        if (hotkey != null) hotkey.Dispose();
+                        if (Overlay != null && !Overlay.IsDisposed) Overlay.Close();
+                        notifyIcon.Visible = false;
+                    };
+                    // ----------------------------------------------------------------------
+
+                    // Tray меню (всі дії через один Overlay)
                     ContextMenu contextMenu = new ContextMenu();
+
+                    contextMenu.MenuItems.Add("Відкрити", (sender, e) =>
+                    {
+                        mainForm.Show();
+                        mainForm.WindowState = FormWindowState.Normal;
+                    });
+
+                    contextMenu.MenuItems.Add("Оверлей (F6)", (sender, e) =>
+                    {
+                        Program.EnsureOverlay();
+                        if (Program.Overlay.Visible) Program.Overlay.Hide();
+                        else Program.Overlay.Show();
+                    });
+
+                    contextMenu.MenuItems.Add("Кліки крізь (Shift+F8)", (sender, e) =>
+                    {
+                        Program.EnsureOverlay();
+                        Program.Overlay.ToggleClickThrough();
+                    });
+
+                    contextMenu.MenuItems.Add("Менший (Ctrl+–)", (s, e) => { Program.EnsureOverlay(); Program.Overlay.ScaleDown(); });
+                    contextMenu.MenuItems.Add("Більший до 100% (Ctrl+=)", (s, e) => { Program.EnsureOverlay(); Program.Overlay.ScaleUp(); });
+                    contextMenu.MenuItems.Add("Масштаб 100% (Ctrl+0)", (s, e) => { Program.EnsureOverlay(); Program.Overlay.ScaleReset(); });
+
+                    contextMenu.MenuItems.Add("Прозоріше (Ctrl+Alt+–)", (s, e) => { Program.EnsureOverlay(); Program.Overlay.OpacityDown(); });
+                    contextMenu.MenuItems.Add("Менш прозоре (Ctrl+Alt+=)", (s, e) => { Program.EnsureOverlay(); Program.Overlay.OpacityUp(); });
+                    contextMenu.MenuItems.Add("Прозорість 0.92 (Ctrl+Alt+0)", (s, e) => { Program.EnsureOverlay(); Program.Overlay.OpacityReset(); });
+
                     MenuItem startupMenuItem = new MenuItem("Запускати при старті");
                     bool isStartupEnabled = IsStartupEnabled();
                     startupMenuItem.Checked = isStartupEnabled;
@@ -39,20 +156,15 @@ namespace SCLOCUA
                         SetStartup(isStartupEnabled);
                         startupMenuItem.Checked = isStartupEnabled;
                     };
-                    contextMenu.MenuItems.Add("Відкрити", (sender, e) =>
-                    {
-                        mainForm.Show();
-                        mainForm.WindowState = FormWindowState.Normal;
-                    });
                     contextMenu.MenuItems.Add(startupMenuItem);
+
                     contextMenu.MenuItems.Add("Вихід", (sender, e) =>
                     {
                         notifyIcon.Visible = false;
                         Application.Exit();
                     });
-                    notifyIcon.ContextMenu = contextMenu;
 
-                    Application.ApplicationExit += (s, e) => notifyIcon.Visible = false;
+                    notifyIcon.ContextMenu = contextMenu;
 
                     mainForm.Resize += (sender, e) =>
                     {
@@ -62,11 +174,6 @@ namespace SCLOCUA
                             notifyIcon.Visible = true;
                         }
                     };
-
-                    // Resolve start timestamp for the hangar overlay and show it.
-                    long startMs = ExecutiveHangarOverlay.StartTimeProvider.ResolveAsync().GetAwaiter().GetResult();
-                    var hangarOverlay = new ExecutiveHangarOverlay.HangarOverlayForm(startMs);
-                    hangarOverlay.Show();
 
                     Application.Run(mainForm);
                 }

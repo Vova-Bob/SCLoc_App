@@ -1,95 +1,111 @@
+﻿// StartTimeProvider.cs (Newtonsoft.Json, .NET Framework 4.8)
 using System;
+using System.Net;
 using System.Net.Http;
-using System.Runtime.Serialization;
-using System.Runtime.Serialization.Json;
 using System.Security;
-using System.Text;
-using System.Threading;
 using System.Threading.Tasks;
+using System.Windows.Forms; // for MessageBox
 using Microsoft.Win32;
+using Newtonsoft.Json;
 
 namespace ExecutiveHangarOverlay
 {
     /// <summary>
-    /// Provides cycle start time with clear priority:
-    /// Registry override -> Remote URL -> Env -> App.config -> UtcNow.
-    /// Also exposes helpers to set/clear local override and force remote resync.
+    /// Source priority:
+    ///  - forceRemote=true: Remote URL -> Registry -> Env -> App.config -> UtcNow
+    ///  - forceRemote=false: Registry -> Remote (cached 5m) -> Env -> App.config -> UtcNow
     /// </summary>
     public static class StartTimeProvider
     {
-        // Registry path for user override
         private const string RegPath = @"Software\SCLocUA";
         private const string RegName = "CycleStartMs";
 
-        // AppSetting keys
         private const string AppSettingRemoteUrl = "START_TIME_URL";
         private const string AppSettingKey = "TIME_START_CYCLE";
         private const string EnvKey = "VITE_TIME_START_CYCLE";
 
-        private static readonly HttpClient Http = new HttpClient
+        private static readonly HttpClient Http;
+        private static long _cached;
+        private static DateTime _lastRemote;
+
+        static StartTimeProvider()
         {
-            Timeout = TimeSpan.FromSeconds(4)
-        };
+            ServicePointManager.SecurityProtocol =
+                SecurityProtocolType.Tls | SecurityProtocolType.Tls11 | SecurityProtocolType.Tls12;
 
-        private static long _cached;            // last resolved value
-        private static DateTime _lastRemote;    // when remote was last fetched
-
-        /// <summary>Resolve start time once (uses cached remote for 5 minutes).</summary>
-        public static async Task<long> ResolveAsync(bool forceRemote = false, CancellationToken ct = default)
-        {
-            // 1) Registry override
-            long? reg = TryReadRegistry();
-            if (reg.HasValue) return _cached = reg.Value;
-
-            // 2) Remote URL (if configured)
-            string url = System.Configuration.ConfigurationManager.AppSettings[AppSettingRemoteUrl];
-            bool needRemote = !string.IsNullOrWhiteSpace(url)
-                              && (forceRemote || (DateTime.UtcNow - _lastRemote) > TimeSpan.FromMinutes(5));
-
-            if (!string.IsNullOrWhiteSpace(url))
+            var handler = new HttpClientHandler
             {
-                if (needRemote)
-                {
-                    var remote = await TryFetchRemoteAsync(url, ct).ConfigureAwait(false);
-                    _lastRemote = DateTime.UtcNow;
-                    if (remote.HasValue) return _cached = remote.Value;
-                }
-                else if (_cached > 0)
-                {
-                    return _cached; // reuse recent remote
-                }
-            }
-
-            // 3) Env
-            if (long.TryParse(Environment.GetEnvironmentVariable(EnvKey), out long envMs))
-                return _cached = envMs;
-
-            // 4) App.config
-            var cfg = System.Configuration.ConfigurationManager.AppSettings[AppSettingKey];
-            if (long.TryParse(cfg, out long cfgMs))
-                return _cached = cfgMs;
-
-            // 5) Fallback: now
-            return _cached = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+                AutomaticDecompression = DecompressionMethods.GZip | DecompressionMethods.Deflate
+            };
+            Http = new HttpClient(handler) { Timeout = TimeSpan.FromSeconds(6) };
         }
 
-        /// <summary>Force a remote re-sync now (if URL configured).</summary>
-        public static Task<long> ForceResyncAsync(CancellationToken ct = default) =>
-            ResolveAsync(forceRemote: true, ct);
+        public static async Task<long> ResolveAsync(bool forceRemote = false)
+        {
+            string url = System.Configuration.ConfigurationManager.AppSettings[AppSettingRemoteUrl];
 
-        /// <summary>Set local user override (ms since Unix epoch).</summary>
+            if (forceRemote)
+            {
+                // 1) Remote first (ignore registry override)
+                if (!string.IsNullOrWhiteSpace(url))
+                {
+                    var remote = await TryFetchRemoteAsync(url).ConfigureAwait(false);
+                    _lastRemote = DateTime.UtcNow;
+                    if (remote.HasValue) return _cached = remote.Value;
+
+                    MessageBox.Show(
+                        $"Не вдалося синхронізувати час із {url}\n" +
+                        "Перевірте доступність URL, сертифікат і формат JSON (\"cycleStartMs\").",
+                        "Помилка синхронізації",
+                        MessageBoxButtons.OK, MessageBoxIcon.Error);
+                }
+
+                // 2) Fallbacks
+                var reg = TryReadRegistry(); if (reg.HasValue) return _cached = reg.Value;
+                if (long.TryParse(Environment.GetEnvironmentVariable(EnvKey), out var envMs)) return _cached = envMs;
+                var cfg = System.Configuration.ConfigurationManager.AppSettings[AppSettingKey];
+                if (long.TryParse(cfg, out var cfgMs)) return _cached = cfgMs;
+                return _cached = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+            }
+            else
+            {
+                // Normal path: Registry first
+                var reg = TryReadRegistry(); if (reg.HasValue) return _cached = reg.Value;
+
+                // Remote with 5m cache
+                bool needRemote = !string.IsNullOrWhiteSpace(url) &&
+                                  (DateTime.UtcNow - _lastRemote) > TimeSpan.FromMinutes(5);
+                if (!string.IsNullOrWhiteSpace(url))
+                {
+                    if (needRemote)
+                    {
+                        var remote = await TryFetchRemoteAsync(url).ConfigureAwait(false);
+                        _lastRemote = DateTime.UtcNow;
+                        if (remote.HasValue) return _cached = remote.Value;
+                    }
+                    else if (_cached > 0) return _cached;
+                }
+
+                if (long.TryParse(Environment.GetEnvironmentVariable(EnvKey), out var envMs)) return _cached = envMs;
+                var cfg = System.Configuration.ConfigurationManager.AppSettings[AppSettingKey];
+                if (long.TryParse(cfg, out var cfgMs)) return _cached = cfgMs;
+                return _cached = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+            }
+        }
+
+        public static Task<long> ForceResyncAsync() => ResolveAsync(forceRemote: true);
+
         public static void SetLocalOverride(long startMs)
         {
             using (var key = Registry.CurrentUser.CreateSubKey(RegPath, true))
-                key?.SetValue(RegName, startMs, RegistryValueKind.QWord);
+                key?.SetValue(RegName, startMs.ToString(), RegistryValueKind.String);
             _cached = startMs;
         }
 
-        /// <summary>Remove local override.</summary>
         public static void ClearLocalOverride()
         {
             using (var key = Registry.CurrentUser.OpenSubKey(RegPath, writable: true))
-                key?.DeleteValue(RegName, throwOnMissingValue: false);
+                key?.DeleteValue(RegName, false);
         }
 
         private static long? TryReadRegistry()
@@ -98,31 +114,38 @@ namespace ExecutiveHangarOverlay
             {
                 using (var key = Registry.CurrentUser.OpenSubKey(RegPath))
                 {
-                    var val = key?.GetValue(RegName);
-                    if (val == null) return null;
-                    if (val is long l) return l;
-                    if (long.TryParse(val.ToString(), out long parsed)) return parsed;
+                    var val = key?.GetValue(RegName)?.ToString();
+                    if (long.TryParse(val, out var ms)) return ms;
                 }
             }
-            catch (SecurityException) { /* ignore */ }
+            catch (SecurityException) { }
             return null;
         }
 
-        [DataContract]
-        private class RemoteDto
+        private sealed class RemoteDto
         {
-            [DataMember(Name = "cycleStartMs")] public long CycleStartMs { get; set; }
+            [JsonProperty("cycleStartMs")]
+            public long CycleStartMs { get; set; }
         }
 
-        private static async Task<long?> TryFetchRemoteAsync(string url, CancellationToken ct)
+        private static async Task<long?> TryFetchRemoteAsync(string url)
         {
-            using (var resp = await Http.GetAsync(url, ct).ConfigureAwait(false))
+            try
             {
-                if (!resp.IsSuccessStatusCode) return null;
-                var stream = await resp.Content.ReadAsStreamAsync().ConfigureAwait(false);
-                var ser = new DataContractJsonSerializer(typeof(RemoteDto));
-                var dto = (RemoteDto)ser.ReadObject(stream);
-                return dto?.CycleStartMs;
+                if (!url.StartsWith("http", StringComparison.OrdinalIgnoreCase)) return null;
+                var json = await Http.GetStringAsync(url).ConfigureAwait(false);
+                var dto = JsonConvert.DeserializeObject<RemoteDto>(json);
+                if (dto == null || dto.CycleStartMs <= 0)
+                    throw new Exception("JSON parsed but value is missing or invalid.");
+                return dto.CycleStartMs;
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(
+                    $"HTTP/JSON помилка:\n{ex.Message}",
+                    "Помилка синхронізації",
+                    MessageBoxButtons.OK, MessageBoxIcon.Error);
+                return null;
             }
         }
     }
