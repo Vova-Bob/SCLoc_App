@@ -1,5 +1,6 @@
 using System;
 using System.Threading;
+using System.Threading.Tasks; // async/await support
 using System.Windows.Forms;
 using Microsoft.Win32;
 
@@ -10,16 +11,50 @@ namespace SCLOCUA
         // ---- ЄДИНИЙ екземпляр оверлею у всьому додатку ----
         internal static ExecutiveHangarOverlay.HangarOverlayForm Overlay;
         internal static long HangarStartMs = -1;
+        private static readonly SemaphoreSlim _overlayGate = new SemaphoreSlim(1, 1); // serialize overlay creation
 
-        // EnsureOverlay: створює/реюзає оверлей, один раз резолвить старт
-        internal static void EnsureOverlay()
+        // EnsureOverlayAsync: create/reuse overlay and resolve start time once without blocking UI
+        internal static async Task EnsureOverlayAsync()
         {
-            if (HangarStartMs < 0)
-                HangarStartMs = ExecutiveHangarOverlay.StartTimeProvider
-                    .ResolveAsync().GetAwaiter().GetResult();
+            if (Overlay != null && !Overlay.IsDisposed && HangarStartMs >= 0) return;
 
-            if (Overlay == null || Overlay.IsDisposed)
-                Overlay = new ExecutiveHangarOverlay.HangarOverlayForm(HangarStartMs);
+            await _overlayGate.WaitAsync();
+            try
+            {
+                if (HangarStartMs < 0)
+                    HangarStartMs = await ExecutiveHangarOverlay.StartTimeProvider
+                        .ResolveAsync().ConfigureAwait(true);
+
+                if (Overlay == null || Overlay.IsDisposed)
+                    Overlay = new ExecutiveHangarOverlay.HangarOverlayForm(HangarStartMs);
+            }
+            finally
+            {
+                _overlayGate.Release();
+            }
+        }
+
+        // Helper to safely operate on overlay from any thread
+        internal static async Task TryWithOverlayAsync(Func<ExecutiveHangarOverlay.HangarOverlayForm, Task> action)
+        {
+            await EnsureOverlayAsync();
+            var ov = Overlay;
+            if (ov == null || ov.IsDisposed) return;
+
+            if (ov.InvokeRequired)
+            {
+                var tcs = new TaskCompletionSource<bool>();
+                ov.BeginInvoke(new Action(async () =>
+                {
+                    try { await action(ov); tcs.SetResult(true); }
+                    catch (Exception ex) { tcs.SetException(ex); }
+                }));
+                await tcs.Task.ConfigureAwait(true);
+            }
+            else
+            {
+                await action(ov);
+            }
         }
         // ----------------------------------------------------
 
@@ -32,6 +67,14 @@ namespace SCLOCUA
 
                 Application.EnableVisualStyles();
                 Application.SetCompatibleTextRenderingDefault(false);
+
+                // global exception handlers to improve stability
+                Application.ThreadException += (s, e) =>
+                    MessageBox.Show(e.Exception.Message, "Unhandled UI exception",
+                        MessageBoxButtons.OK, MessageBoxIcon.Error);
+                AppDomain.CurrentDomain.UnhandledException += (s, e) =>
+                    MessageBox.Show((e.ExceptionObject as Exception)?.Message ?? e.ExceptionObject.ToString(),
+                        "Unhandled exception", MessageBoxButtons.OK, MessageBoxIcon.Error);
 
                 Form1 mainForm = new Form1();
                 using (NotifyIcon notifyIcon = new NotifyIcon())
@@ -53,60 +96,72 @@ namespace SCLOCUA
                         hotkey = new ExecutiveHangarOverlay.HotkeyMessageFilter(mainForm.Handle);
 
                         // F6 — show/hide
-                        hotkey.OnToggleOverlay += () =>
+                        hotkey.OnToggleOverlay += async () =>
                         {
-                            Program.EnsureOverlay();
-                            if (Program.Overlay.Visible) Program.Overlay.Hide();
-                            else Program.Overlay.Show();
+                            await Program.TryWithOverlayAsync(o =>
+                            {
+                                if (o.Visible) o.Hide(); else o.Show();
+                                return Task.CompletedTask;
+                            });
                         };
 
                         // Shift+F8 — click-through
-                        hotkey.OnToggleClickThrough += () =>
+                        hotkey.OnToggleClickThrough += async () =>
                         {
-                            Program.EnsureOverlay();
-                            Program.Overlay.ToggleClickThrough();
+                            await Program.TryWithOverlayAsync(o =>
+                            {
+                                o.ToggleClickThrough();
+                                return Task.CompletedTask;
+                            });
                         };
 
                         // Ctrl+F8 — temporary drag
-                        hotkey.OnBeginTempDrag += () =>
+                        hotkey.OnBeginTempDrag += async () =>
                         {
-                            Program.EnsureOverlay();
-                            Program.Overlay.BeginTemporaryDragMode();
+                            await Program.TryWithOverlayAsync(o =>
+                            {
+                                o.BeginTemporaryDragMode();
+                                return Task.CompletedTask;
+                            });
                         };
 
                         // Ctrl+Shift+F7 / Shift+F7
-                        hotkey.OnSetStartNow += () =>
+                        hotkey.OnSetStartNow += async () =>
                         {
-                            Program.EnsureOverlay();
-                            Program.Overlay.SetStartNow();
+                            await Program.TryWithOverlayAsync(o =>
+                            {
+                                o.SetStartNow();
+                                return Task.CompletedTask;
+                            });
                         };
-                        hotkey.OnPromptManualStart += () =>
+                        hotkey.OnPromptManualStart += async () =>
                         {
-                            Program.EnsureOverlay();
-                            Program.Overlay.PromptManualStart();
+                            await Program.TryWithOverlayAsync(o =>
+                            {
+                                o.PromptManualStart();
+                                return Task.CompletedTask;
+                            });
                         };
 
                         // F9 / Shift+F9
                         hotkey.OnForceSync += async () =>
                         {
-                            Program.EnsureOverlay();
-                            await Program.Overlay.ForceSyncAsync();
+                            await Program.TryWithOverlayAsync(o => o.ForceSyncAsync());
                         };
                         hotkey.OnClearOverrideAndSync += async () =>
                         {
-                            Program.EnsureOverlay();
-                            await Program.Overlay.ClearOverrideAndSyncAsync();
+                            await Program.TryWithOverlayAsync(o => o.ClearOverrideAndSyncAsync());
                         };
 
                         // Scale
-                        hotkey.OnScaleDown += () => { Program.EnsureOverlay(); Program.Overlay.ScaleDown(); };
-                        hotkey.OnScaleUp += () => { Program.EnsureOverlay(); Program.Overlay.ScaleUp(); };
-                        hotkey.OnScaleReset += () => { Program.EnsureOverlay(); Program.Overlay.ScaleReset(); };
+                        hotkey.OnScaleDown += async () => { await Program.TryWithOverlayAsync(o => { o.ScaleDown(); return Task.CompletedTask; }); };
+                        hotkey.OnScaleUp += async () => { await Program.TryWithOverlayAsync(o => { o.ScaleUp(); return Task.CompletedTask; }); };
+                        hotkey.OnScaleReset += async () => { await Program.TryWithOverlayAsync(o => { o.ScaleReset(); return Task.CompletedTask; }); };
 
                         // Opacity
-                        hotkey.OnOpacityDown += () => { Program.EnsureOverlay(); Program.Overlay.OpacityDown(); };
-                        hotkey.OnOpacityUp += () => { Program.EnsureOverlay(); Program.Overlay.OpacityUp(); };
-                        hotkey.OnOpacityReset += () => { Program.EnsureOverlay(); Program.Overlay.OpacityReset(); };
+                        hotkey.OnOpacityDown += async () => { await Program.TryWithOverlayAsync(o => { o.OpacityDown(); return Task.CompletedTask; }); };
+                        hotkey.OnOpacityUp += async () => { await Program.TryWithOverlayAsync(o => { o.OpacityUp(); return Task.CompletedTask; }); };
+                        hotkey.OnOpacityReset += async () => { await Program.TryWithOverlayAsync(o => { o.OpacityReset(); return Task.CompletedTask; }); };
                     };
 
                     Application.ApplicationExit += (s, e) =>
@@ -126,26 +181,31 @@ namespace SCLOCUA
                         mainForm.WindowState = FormWindowState.Normal;
                     });
 
-                    contextMenu.MenuItems.Add("Оверлей (F6)", (sender, e) =>
+                    contextMenu.MenuItems.Add("Оверлей (F6)", async (sender, e) =>
                     {
-                        Program.EnsureOverlay();
-                        if (Program.Overlay.Visible) Program.Overlay.Hide();
-                        else Program.Overlay.Show();
+                        await Program.TryWithOverlayAsync(o =>
+                        {
+                            if (o.Visible) o.Hide(); else o.Show();
+                            return Task.CompletedTask;
+                        });
                     });
 
-                    contextMenu.MenuItems.Add("Кліки крізь (Shift+F8)", (sender, e) =>
+                    contextMenu.MenuItems.Add("Кліки крізь (Shift+F8)", async (sender, e) =>
                     {
-                        Program.EnsureOverlay();
-                        Program.Overlay.ToggleClickThrough();
+                        await Program.TryWithOverlayAsync(o =>
+                        {
+                            o.ToggleClickThrough();
+                            return Task.CompletedTask;
+                        });
                     });
 
-                    contextMenu.MenuItems.Add("Менший (Ctrl+–)", (s, e) => { Program.EnsureOverlay(); Program.Overlay.ScaleDown(); });
-                    contextMenu.MenuItems.Add("Більший до 100% (Ctrl+=)", (s, e) => { Program.EnsureOverlay(); Program.Overlay.ScaleUp(); });
-                    contextMenu.MenuItems.Add("Масштаб 100% (Ctrl+0)", (s, e) => { Program.EnsureOverlay(); Program.Overlay.ScaleReset(); });
+                    contextMenu.MenuItems.Add("Менший (Ctrl+–)", async (s, e) => { await Program.TryWithOverlayAsync(o => { o.ScaleDown(); return Task.CompletedTask; }); });
+                    contextMenu.MenuItems.Add("Більший до 100% (Ctrl+=)", async (s, e) => { await Program.TryWithOverlayAsync(o => { o.ScaleUp(); return Task.CompletedTask; }); });
+                    contextMenu.MenuItems.Add("Масштаб 100% (Ctrl+0)", async (s, e) => { await Program.TryWithOverlayAsync(o => { o.ScaleReset(); return Task.CompletedTask; }); });
 
-                    contextMenu.MenuItems.Add("Прозоріше (Ctrl+Alt+–)", (s, e) => { Program.EnsureOverlay(); Program.Overlay.OpacityDown(); });
-                    contextMenu.MenuItems.Add("Менш прозоре (Ctrl+Alt+=)", (s, e) => { Program.EnsureOverlay(); Program.Overlay.OpacityUp(); });
-                    contextMenu.MenuItems.Add("Прозорість 0.92 (Ctrl+Alt+0)", (s, e) => { Program.EnsureOverlay(); Program.Overlay.OpacityReset(); });
+                    contextMenu.MenuItems.Add("Прозоріше (Ctrl+Alt+–)", async (s, e) => { await Program.TryWithOverlayAsync(o => { o.OpacityDown(); return Task.CompletedTask; }); });
+                    contextMenu.MenuItems.Add("Менш прозоре (Ctrl+Alt+=)", async (s, e) => { await Program.TryWithOverlayAsync(o => { o.OpacityUp(); return Task.CompletedTask; }); });
+                    contextMenu.MenuItems.Add("Прозорість 0.92 (Ctrl+Alt+0)", async (s, e) => { await Program.TryWithOverlayAsync(o => { o.OpacityReset(); return Task.CompletedTask; }); });
 
                     MenuItem startupMenuItem = new MenuItem("Запускати при старті");
                     bool isStartupEnabled = IsStartupEnabled();
@@ -160,8 +220,8 @@ namespace SCLOCUA
 
                     contextMenu.MenuItems.Add("Вихід", (sender, e) =>
                     {
-                        notifyIcon.Visible = false;
-                        Application.Exit();
+                        // close main form; ApplicationExit will handle cleanup
+                        mainForm.Close();
                     });
 
                     notifyIcon.ContextMenu = contextMenu;
