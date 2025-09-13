@@ -29,6 +29,16 @@ namespace SCLOCUA
         private bool antiAfkEnabled = false;              // simple AntiAFK flag
         private killFeed overlayForm;                     // KillFeed overlay form
 
+        // helper ensures overlay operations are safe and run on UI thread
+        private void TryWithOverlay(Action<killFeed> action)
+        {
+            if (overlayForm == null || overlayForm.IsDisposed) return;
+            if (overlayForm.InvokeRequired)
+                overlayForm.BeginInvoke(new Action(() => action(overlayForm)));
+            else
+                action(overlayForm);
+        }
+
         // ===== Перевірка кешу при старті =====
         private bool _cacheCheckedOnce = false;
         private const long TWO_GB = 3L * 1024 * 1024 * 1024;          // large dir threshold (UI shows 3 GB)
@@ -783,7 +793,8 @@ namespace SCLOCUA
         private void Form1_FormClosing(object sender, FormClosingEventArgs e)
         {
             if (_antiAFK != null) _antiAFK.Dispose();
-            if (overlayForm != null && !overlayForm.IsDisposed) overlayForm.Close();
+            // do not manually close overlay to avoid modifying Application.OpenForms
+            // it will close automatically when owner form is closed
         }
 
         // --- KillFeed button ---
@@ -797,27 +808,32 @@ namespace SCLOCUA
 
             if (overlayForm == null || overlayForm.IsDisposed)
             {
-                overlayForm = new killFeed(selectedFolderPath);
+                overlayForm = new killFeed(selectedFolderPath) { Owner = this }; // set owner so it closes with main form
                 overlayForm.Show();
                 SetUi(buttonkillfeed, true, "KillFeed ON", "KillFeed OFF", "KillFeed: ");
             }
             else
             {
-                overlayForm.ToggleVisibility();
-                SetUi(buttonkillfeed, overlayForm.Visible, "KillFeed ON", "KillFeed OFF", "KillFeed: ");
+                TryWithOverlay(of =>
+                {
+                    of.ToggleVisibility();
+                    SetUi(buttonkillfeed, of.Visible, "KillFeed ON", "KillFeed OFF", "KillFeed: ");
+                });
             }
         }
 
-        // --- Hangar overlay button (через Program.EnsureOverlay) ---
-        private void ButtonHangar_Click(object sender, EventArgs e)
+        // --- Hangar overlay button (через Program.TryWithOverlayAsync) ---
+        private async void ButtonHangar_Click(object sender, EventArgs e)
         {
-            Program.EnsureOverlay();
+            await Program.TryWithOverlayAsync(o =>
+            {
+                bool on;
+                if (!o.Visible) { o.Show(); on = true; }
+                else { o.Hide(); on = false; }
 
-            bool on;
-            if (!Program.Overlay.Visible) { Program.Overlay.Show(); on = true; }
-            else { Program.Overlay.Hide(); on = false; }
-
-            SetUi(buttonHangar, on, "EX-Hangar ON", "EX-Hangar OFF", "EX-Hangar: ");
+                SetUi(buttonHangar, on, "EX-Hangar ON", "EX-Hangar OFF", "EX-Hangar: ");
+                return Task.CompletedTask;
+            });
         }
     }
 }

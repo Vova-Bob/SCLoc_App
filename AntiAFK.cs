@@ -9,7 +9,9 @@ namespace SCLOCUA
     internal class AntiAFK : IDisposable
     {
         private readonly System.Threading.Timer _timer;
+        private readonly object _gate = new object(); // protects mutable state
         private bool _isRunning = false;
+        private bool _disposed = false;               // track disposal to avoid ObjectDisposedException
         private const int MovementDelta = 1;
         private bool moveRight = true;
         private CancellationTokenSource _cancellationTokenSource;
@@ -32,37 +34,63 @@ namespace SCLOCUA
 
         public void ToggleAntiAFK(ToolStripStatusLabel statusLabel)
         {
-            if (_isRunning)
+            lock (_gate)
             {
-                Stop();
-                statusLabel.Text = "Anti-AFK вимкнено";
-            }
-            else
-            {
-                HookManager.Rehook();
-                _cancellationTokenSource = new CancellationTokenSource();
+                if (_disposed) return; // ignore calls once disposed
 
-                // Запускаємо таймер з можливістю зупинки
-                _timer.Change(0, 1000);  // Перевіряємо кожну секунду
-                statusLabel.Text = "Anti-AFK увімкнено";
-                _isRunning = true;
+                if (_isRunning)
+                {
+                    // stop safely when already running
+                    StopInternal();
+                    statusLabel.Text = "Anti-AFK вимкнено";
+                }
+                else
+                {
+                    HookManager.Rehook();
+                    _cancellationTokenSource = new CancellationTokenSource();
+
+                    // start timer – no collection modification after dispose
+                    _timer.Change(0, 1000);  // Перевіряємо кожну секунду
+                    statusLabel.Text = "Anti-AFK увімкнено";
+                    _isRunning = true;
+                }
             }
         }
 
+        // public Stop method with guard checks
         public void Stop()
         {
+            lock (_gate)
+            {
+                if (_disposed || !_isRunning) return; // nothing to stop
+                StopInternal();
+            }
+        }
+
+        // actual stop logic (callers must hold _gate)
+        private void StopInternal()
+        {
+            // guard Timer.Change against disposal
             _timer.Change(Timeout.Infinite, Timeout.Infinite);
             _cancellationTokenSource?.Cancel();
             _cancellationTokenSource?.Dispose();
-            _cancellationTokenSource = new CancellationTokenSource();
+            _cancellationTokenSource = null;
             HookManager.Unhook();
             _isRunning = false;
         }
 
         public void Dispose()
         {
-            Stop();
-            _timer.Dispose();
+            lock (_gate)
+            {
+                if (_disposed) return;
+
+                // ensure timer stopped before disposing to avoid ObjectDisposedException
+                if (_isRunning) StopInternal();
+                _timer.Dispose();
+                _cancellationTokenSource?.Dispose();
+                _disposed = true;
+            }
         }
 
         private void TimerCallback(object state)
