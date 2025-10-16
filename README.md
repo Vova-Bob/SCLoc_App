@@ -4,7 +4,7 @@
 [![Visitors](https://api.visitorbadge.io/api/visitors?path=Vova-Bob%2FSCLoc_App&labelColor=%2337d67a&countColor=%23263759&style=plastic&labelStyle=lower)](https://visitorbadge.io/status?path=Vova-Bob%2FSCLoc_App)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://github.com/Vova-Bob/SCLoc_App/blob/main/LICENSE)
 [![Virustotal](https://img.shields.io/static/v1?label=Virustotal&message=Scan&color=blue)](https://www.virustotal.com/gui/file/8e1410a6e57622f1872bce0be14d7d1b28340d6e4f5b23170052910b7fe80397?nocache=1)
-![SClocApp](https://github.com/Vova-Bob/SCLoc_App/blob/main/img/sclocuajpg)
+![SClocApp](https://github.com/Vova-Bob/SCLoc_App/blob/main/img/sclocua.jpg)
 
 Додаток для локалізації гри Star Citizen Українською
 
@@ -30,7 +30,7 @@
 4. Включіть прапорець `user.cfg` якщо у вас не має цього файлу (конфігурації користувача) або створіть його власноруч з [інструкції](https://github.com/Vova-Bob/SC_localization_UA)
 5. Натисніть кнопку "встановити локалізацію"
    
-![Опис зображення](https://github.com/Vova-Bob/SCLoc_App/blob/main/img/8png)
+![Опис зображення](https://github.com/Vova-Bob/SCLoc_App/blob/main/img/8.png)
 
 ---
 
