@@ -9,6 +9,7 @@ using System.Text.RegularExpressions;
 using Newtonsoft.Json.Linq;
 using System.Drawing;
 using System.Collections.Generic; // <— ДОДАНО для Dictionary
+using NAudio.Wave;
 
 namespace SCLOCUA
 {
@@ -28,6 +29,8 @@ namespace SCLOCUA
 
         private bool antiAfkEnabled = false;              // simple AntiAFK flag
         private killFeed overlayForm;                     // KillFeed overlay form
+        private AudioPlayer _catPlayer; // <— додано для звуку кота
+
 
         // helper ensures overlay operations are safe and run on UI thread
         private void TryWithOverlay(Action<killFeed> action)
@@ -77,6 +80,10 @@ namespace SCLOCUA
             toolTip.SetToolTip(button1, "LIVE, EPTU, PTU, 4.0_PREVIEW");
             toolTip.SetToolTip(button2, "Встановити / Оновити файли локалізації");
             toolTip.SetToolTip(button3, "Видалити файли локалізації");
+            // Події наведення миші на кота
+            pictureBox2.MouseEnter += PictureBox2_MouseEnter;
+            pictureBox2.MouseLeave += PictureBox2_MouseLeave;
+
 
             // AntiAFK
             _antiAFK = new AntiAFK();
@@ -497,12 +504,28 @@ namespace SCLOCUA
             await OfferCacheCleanupIfLargeAsync();
 
             Console.WriteLine("Перевірка оновлення додатка та релізів перекладу завершена.");
+
+            // Ініціалізуємо аудіо плеєр для кота
+            var mp3Path = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "cat.mp3");
+            _catPlayer = new AudioPlayer(mp3Path);
+
         }
 
         private void pictureBox2_Click(object sender, EventArgs e)
         {
             OpenUrl("https://send.monobank.ua/jar/44HXkQkorg");
         }
+
+        private void PictureBox2_MouseEnter(object sender, EventArgs e)
+        {
+            _catPlayer?.Play(); // Програє звук при наведенні
+        }
+
+        private void PictureBox2_MouseLeave(object sender, EventArgs e)
+        {
+            _catPlayer?.Stop(); // Зупиняє при відведенні миші
+        }
+
 
         // --- Wiki button ---
         private void buttonWiki_Click(object sender, EventArgs e)
@@ -795,6 +818,8 @@ namespace SCLOCUA
             if (_antiAFK != null) _antiAFK.Dispose();
             // do not manually close overlay to avoid modifying Application.OpenForms
             // it will close automatically when owner form is closed
+            _catPlayer?.Dispose();
+
         }
 
         // --- KillFeed button ---

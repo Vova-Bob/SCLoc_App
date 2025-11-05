@@ -2,14 +2,16 @@ using System;
 using System.Diagnostics;
 using System.IO;
 using System.Net.Http;
-using System.Security.Cryptography;
-using System.Security.Cryptography.X509Certificates;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 using Newtonsoft.Json.Linq;
 
 namespace SCLOCUA
 {
+    /// <summary>
+    /// Simple GitHub release updater: checks latest tag, downloads installer, runs it, exits app.
+    /// NOTE: Digital signature validation was intentionally removed per request.
+    /// </summary>
     internal class AppUpdater
     {
         private const string GitHubApiUrl = "https://api.github.com/repos/Vova-Bob/SCLoc_App/releases/latest";
@@ -19,10 +21,10 @@ namespace SCLOCUA
             try
             {
                 var latestReleaseInfo = await GetLatestReleaseInfoAsync();
-
                 if (latestReleaseInfo == null)
                 {
-                    MessageBox.Show("Не вдалося отримати інформацію про релізи.", "Помилка", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    MessageBox.Show("Не вдалося отримати інформацію про релізи.", "Помилка",
+                        MessageBoxButtons.OK, MessageBoxIcon.Error);
                     return;
                 }
 
@@ -35,15 +37,12 @@ namespace SCLOCUA
                     : releaseNotes;
 
                 string currentVersion = Application.ProductVersion;
-
-                Console.WriteLine($"Поточна версія: {currentVersion}, Остання версія: {latestVersion}");
-
                 Version currentVer = new Version(currentVersion);
                 Version latestVer = new Version(latestVersion.TrimStart('v'));
 
                 if (latestVer > currentVer)
                 {
-                    DialogResult result = MessageBox.Show(
+                    var result = MessageBox.Show(
                         $"Доступна нова версія програми: {latestVersion}\n" +
                         $"Ваша версія: {currentVersion}\n\n" +
                         $"Опис оновлення:\n{truncatedReleaseNotes}\n\n" +
@@ -53,48 +52,52 @@ namespace SCLOCUA
                         MessageBoxIcon.Information);
 
                     if (result == DialogResult.Yes)
-                    {
                         await StartAppUpdate(downloadUrl);
-                    }
                 }
             }
             catch (Exception ex)
             {
-                MessageBox.Show("Не вдалося перевірити наявність оновлень: " + ex.Message, "Помилка", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                MessageBox.Show("Не вдалося перевірити наявність оновлень: " + ex.Message, "Помилка",
+                    MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
         }
 
-        private class ReleaseInfo
+        private sealed class ReleaseInfo
         {
             public string Version { get; set; }
             public string DownloadUrl { get; set; }
             public string ReleaseNotes { get; set; }
         }
 
+        /// <summary>
+        /// Calls GitHub Releases API and returns latest tag, asset URL and notes.
+        /// </summary>
         private async Task<ReleaseInfo> GetLatestReleaseInfoAsync()
         {
             try
             {
-                var client = HttpClientService.Client;
+                var client = HttpClientService.Client; // reuse shared HttpClient
                 var response = await client.GetStringAsync(GitHubApiUrl);
 
-                Console.WriteLine("Отримано дані про реліз: " + response);
-
-                var jsonResponse = JObject.Parse(response);
+                var json = JObject.Parse(response);
                 return new ReleaseInfo
                 {
-                    Version = jsonResponse["tag_name"].ToString(),
-                    DownloadUrl = jsonResponse["assets"][0]["browser_download_url"].ToString(),
-                    ReleaseNotes = jsonResponse["body"].ToString()
+                    Version = json["tag_name"]?.ToString(),
+                    DownloadUrl = json["assets"]?[0]?["browser_download_url"]?.ToString(),
+                    ReleaseNotes = json["body"]?.ToString() ?? ""
                 };
             }
             catch (Exception ex)
             {
-                MessageBox.Show("Помилка при отриманні даних про реліз: " + ex.Message, "Помилка", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                MessageBox.Show("Помилка при отриманні даних про реліз: " + ex.Message, "Помилка",
+                    MessageBoxButtons.OK, MessageBoxIcon.Error);
                 return null;
             }
         }
 
+        /// <summary>
+        /// Downloads installer to temp and runs it. No signature checks.
+        /// </summary>
         private async Task StartAppUpdate(string installerUrl)
         {
             try
@@ -102,43 +105,27 @@ namespace SCLOCUA
                 string tempInstallerPath = Path.Combine(Path.GetTempPath(), "SCLocAppInstaller.exe");
 
                 var client = HttpClientService.Client;
-                var response = await client.GetAsync(installerUrl);
-                response.EnsureSuccessStatusCode();
-
-                using (var fs = new FileStream(tempInstallerPath, FileMode.Create, FileAccess.Write, FileShare.None, 8192, true))
+                using (var resp = await client.GetAsync(installerUrl, HttpCompletionOption.ResponseHeadersRead))
                 {
-                    await response.Content.CopyToAsync(fs);
+                    resp.EnsureSuccessStatusCode();
+                    using (var fs = new FileStream(tempInstallerPath, FileMode.Create, FileAccess.Write, FileShare.None, 8192, true))
+                        await resp.Content.CopyToAsync(fs);
                 }
 
-                if (!HasValidSignature(tempInstallerPath))
+                // Run installer and exit current app
+                Process.Start(new ProcessStartInfo
                 {
-                    MessageBox.Show("Цифровий підпис завантаженого файлу недійсний. Оновлення скасовано.", "Помилка", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                    return;
-                }
+                    FileName = tempInstallerPath,
+                    UseShellExecute = true,
+                    Verb = "runas" // request elevation if needed
+                });
 
-                Process.Start(tempInstallerPath);
                 Application.Exit();
             }
             catch (Exception ex)
             {
-                MessageBox.Show("Помилка при завантаженні оновлення: " + ex.Message, "Помилка", MessageBoxButtons.OK, MessageBoxIcon.Error);
-            }
-        }
-
-        private bool HasValidSignature(string filePath)
-        {
-            try
-            {
-                var cert = new X509Certificate2(X509Certificate.CreateFromSignedFile(filePath));
-                using (var chain = new X509Chain())
-                {
-                    chain.ChainPolicy.RevocationMode = X509RevocationMode.Online;
-                    return chain.Build(cert);
-                }
-            }
-            catch (CryptographicException)
-            {
-                return false;
+                MessageBox.Show("Помилка при завантаженні оновлення: " + ex.Message, "Помилка",
+                    MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
         }
     }

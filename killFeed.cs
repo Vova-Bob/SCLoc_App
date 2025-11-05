@@ -79,6 +79,19 @@ namespace SCLOCUA
         private SoundPlayer _player; // may remain null in runtime; allowed in C# 7.3
         private string _wav;         // may remain null in runtime; allowed in C# 7.3
 
+        // --- NEW: keep overlay independent & hidden from Alt-Tab ---
+        protected override CreateParams CreateParams
+        {
+            get
+            {
+                // Make a tool window (no Alt-Tab), still a top-level window
+                var cp = base.CreateParams;
+                const int WS_EX_TOOLWINDOW = 0x00000080;
+                cp.ExStyle |= WS_EX_TOOLWINDOW;
+                return cp;
+            }
+        }
+
         public killFeed(string folderPath)
         {
             InitializeComponent();
@@ -96,6 +109,9 @@ namespace SCLOCUA
             this.Location = new Point(120, 120);
             this.TopMost = true; SetTopMost();
             this.ShowInTaskbar = false;
+
+            // Ensure we are NOT an owned window (critical for tray-minimize scenarios)
+            DetachOwnerIfAny();
 
             // Drag overlay anywhere
             this.MouseDown += (s, e) => { if (e.Button == MouseButtons.Left) { _dragging = true; _dragStart = e.Location; } };
@@ -130,6 +146,16 @@ namespace SCLOCUA
             var _ = TailAsync();
         }
 
+        // Ensure we detach from an owner in case killFeed was shown with Show(owner)
+        protected override void OnShown(EventArgs e)
+        {
+            base.OnShown(e);
+            // Detach ownership immediately on being shown to stay visible when main form hides to tray
+            DetachOwnerIfAny();
+            // Re-assert topmost without stealing focus
+            EnsureTopMostNow();
+        }
+
         // inside class killFeed
         public void ToggleVisibility()
         {
@@ -140,6 +166,29 @@ namespace SCLOCUA
         private void SetTopMost()
         {
             SetWindowPos(this.Handle, HWND_TOPMOST, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE);
+        }
+
+        // --- NEW: helper to (re)apply TopMost safely without activation ---
+        private void EnsureTopMostNow()
+        {
+            try
+            {
+                // Keep TopMost true, reapply z-order without activation
+                this.TopMost = true;
+                SetTopMost();
+            }
+            catch { /* non-fatal */ }
+        }
+
+        // --- NEW: helper to drop any owner to avoid auto-hide with owner ---
+        public void DetachOwnerIfAny()
+        {
+            try
+            {
+                // If someone showed us with Show(this) => remove the owner
+                if (this.Owner != null) this.Owner = null;
+            }
+            catch { /* ignore */ }
         }
 
         protected override void WndProc(ref Message m)
@@ -163,8 +212,18 @@ namespace SCLOCUA
         private void Toggle()
         {
             _visibleState = !_visibleState;
-            if (_visibleState) { this.Show(); this.BringToFront(); SetTopMost(); }
-            else this.Hide();
+            if (_visibleState)
+            {
+                // Make sure we are independent and on top when turning visible back
+                DetachOwnerIfAny();
+                this.Show();
+                this.BringToFront();
+                EnsureTopMostNow();
+            }
+            else
+            {
+                this.Hide();
+            }
         }
 
         private async Task TailAsync()
