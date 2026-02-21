@@ -162,10 +162,10 @@ namespace SCLOCUA
             button2.Click += UpdateLocalizationButtonClick;
             button3.Click += DeleteFilesButtonClick;
 
-            AssignLink(linkLabel1, "https://docs.google.com/forms/d/e/1FAIpQLSdcNr1EdqUU6K63MVwKyDX7-twxDsCQDw8PfgмDSu_D1q9GRA/viewform");
+            AssignLink(linkLabel1, "https://docs.google.com/forms/d/1oC1QSHHVNeNOUw5L-MFgKuyLnwT-zt_F90fMdP2AKOw/viewform");
             AssignLink(linkLabel2, "https://discord.gg/TEwrDands4");
             AssignLink(linkLabel3, "https://github.com/Vova-Bob/SC_localization_UA");
-            AssignLink(linkLabel4, "https://docs.google.com/forms/d/e/1FAIpQLSfWRo63MgESTmzr-C0кPVkfgHSxZW2eЗelTtGsw0htoMe_6A/viewform");
+            AssignLink(linkLabel4, "https://docs.google.com/forms/d/1tZ7o8gAuNdc2asq8Rpn_ragit1_Wr-6oPM3nxBa3uqw/viewform");
             AssignLink(linkLabel5, "https://gitlab.com/valdeus/sc_localization_ua");
             AssignLink(pictureBox1, "https://scloc.pp.ua");
         }
