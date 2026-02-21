@@ -77,6 +77,7 @@ namespace SCLOCUA
             toolTip.SetToolTip(buttonClearCache, "Очистити кеш шейдерів гри Star Citizen");
             toolTip.SetToolTip(buttonWiki, "Відкрити/Закрити SC_Wiki");
             toolTip.SetToolTip(checkBox1, "Файл конфігурації, якщо немає");
+            toolTip.SetToolTip(button1, "LIVE, EPTU, PTU");
             toolTip.SetToolTip(button2, "Встановити / Оновити файли локалізації");
             toolTip.SetToolTip(button3, "Видалити файли локалізації");
             // Події наведення миші на кота
