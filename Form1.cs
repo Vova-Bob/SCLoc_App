@@ -44,8 +44,8 @@ namespace SCLOCUA
 
         // ===== Перевірка кешу при старті =====
         private bool _cacheCheckedOnce = false;
-        private const long TWO_GB = 3L * 1024 * 1024 * 1024;          // large dir threshold (UI shows 3 GB)
-        private const long LATEST_OK_BYTES = 2L * 1024 * 1024 * 1024;      // OK size for latest cache (change as needed)
+        private const long TWO_GB = 4L * 1024 * 1024 * 1024;          // large dir threshold (UI shows 4 GB)
+        private const long LATEST_OK_BYTES = 3L * 1024 * 1024 * 1024;      // OK size for latest cache (change as needed)
 
         public Form1()
         {
@@ -77,7 +77,6 @@ namespace SCLOCUA
             toolTip.SetToolTip(buttonClearCache, "Очистити кеш шейдерів гри Star Citizen");
             toolTip.SetToolTip(buttonWiki, "Відкрити/Закрити SC_Wiki");
             toolTip.SetToolTip(checkBox1, "Файл конфігурації, якщо немає");
-            toolTip.SetToolTip(button1, "LIVE, EPTU, PTU, 4.0_PREVIEW");
             toolTip.SetToolTip(button2, "Встановити / Оновити файли локалізації");
             toolTip.SetToolTip(button3, "Видалити файли локалізації");
             // Події наведення миші на кота
