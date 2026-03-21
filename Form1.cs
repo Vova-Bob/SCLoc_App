@@ -18,6 +18,7 @@ namespace SCLOCUA
         private const string UserCfgFileName = "user.cfg";
         private const string GlobalIniFileName = "global.ini";
         private const string LocalizationPath = "Data/Localization/korean_(south_korea)";
+        private const string UserCfgContent = "g_language = korean_(south_korea)\r\ng_languageAudio = english\r\n";
         private const string GithubGistUrlPattern = @"https://gist.github.com/\w+/\w+";
         private const string GithubReleasesApiUrl = "https://api.github.com/repos/Vova-Bob/SC_localization_UA/releases";
 
@@ -242,7 +243,8 @@ namespace SCLOCUA
             bool userCfgExists = File.Exists(Path.Combine(selectedFolderPath, UserCfgFileName));
             if (!userCfgExists && checkBox1.Checked)
             {
-                await CopyFileAsync(UserCfgFileName, Path.Combine(selectedFolderPath, UserCfgFileName));
+                string userCfgPath = Path.Combine(selectedFolderPath, UserCfgFileName);
+                await Task.Run(() => File.WriteAllText(userCfgPath, UserCfgContent, new System.Text.UTF8Encoding(false)));
                 toolStripProgressBar1.Value++;
                 checkBox1.Checked = false;
             }
@@ -269,13 +271,6 @@ namespace SCLOCUA
             if (await Task.WhenAny(task, Task.Delay(timeout)) != task)
                 throw new TimeoutException("Читання файлу перевищило час очікування");
             return await task;
-        }
-
-        private async Task CopyFileAsync(string sourceFileName, string destinationPath, int timeout = 5000)
-        {
-            var task = Task.Run(() => File.Copy(sourceFileName, destinationPath, true));
-            if (await Task.WhenAny(task, Task.Delay(timeout)) != task)
-                throw new TimeoutException("Копіювання файлу перевищило час очікування");
         }
 
         private async Task DeleteFileAsync(string path, int timeout = 5000)
