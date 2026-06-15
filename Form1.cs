@@ -17,7 +17,7 @@ namespace SCLOCUA
     {
         private const string UserCfgFileName = "user.cfg";
         private const string GlobalIniFileName = "global.ini";
-        private const string LocalizationPath = "Data/Localization/korean_(south_korea)";
+        private const string LocalizationPath = @"Data\Localization\korean_(south_korea)";
         private const string UserCfgContent = "g_language = korean_(south_korea)\r\ng_languageAudio = english\r\n";
         private const string GithubGistUrlPattern = @"https://gist.github.com/\w+/\w+";
         private const string GithubReleasesApiUrl = "https://api.github.com/repos/Vova-Bob/SC_localization_UA/releases";
@@ -45,8 +45,8 @@ namespace SCLOCUA
 
         // ===== Перевірка кешу при старті =====
         private bool _cacheCheckedOnce = false;
-        private const long TWO_GB = 4L * 1024 * 1024 * 1024;          // large dir threshold (UI shows 4 GB)
-        private const long LATEST_OK_BYTES = 3L * 1024 * 1024 * 1024;      // OK size for latest cache (change as needed)
+        private const long LARGE_CACHE_THRESHOLD = 5L * 1024 * 1024 * 1024;   // any shader-cache dir >= 5 GB triggers cleanup
+        private const long LATEST_OK_BYTES = 3L * 1024 * 1024 * 1024;         // latest cache above 3 GB triggers cleanup
 
         public Form1()
         {
@@ -252,10 +252,10 @@ namespace SCLOCUA
 
         private async Task<string> GetGithubReleaseUrlAsync()
         {
-            if (selectedFolderPath.Contains("LIVE"))
+            if (selectedFolderPath.Contains("LIVE") || selectedFolderPath.Contains("HOTFIX"))
                 return "https://github.com/Vova-Bob/SC_localization_UA/releases/latest/download/global.ini";
 
-            if (selectedFolderPath.Contains("PTU") || selectedFolderPath.Contains("EPTU") || selectedFolderPath.Contains("4.0_PREVIEW"))
+            if (selectedFolderPath.Contains("PTU") || selectedFolderPath.Contains("EPTU"))
             {
                 var tagName = await GetLatestReleaseTagAsync();
                 return string.IsNullOrEmpty(tagName)
@@ -675,9 +675,10 @@ namespace SCLOCUA
         }
 
         // ===== One-shot cache check on app start =====
-        // Trigger if: (1) old shader-cache folders exist,
-        //             (2) latest shader-cache > LATEST_OK_BYTES,
-        //             (3) ANY shader-cache dir >= TWO_GB (large folder).
+        // Trigger ONLY by size:
+        //   (1) latest shader-cache > LATEST_OK_BYTES (4 GB), or
+        //   (2) ANY shader-cache dir >= LARGE_CACHE_THRESHOLD (5 GB).
+        // We intentionally do NOT show the dialog just because an old folder exists.
         private async Task OfferCacheCleanupIfLargeAsync()
         {
             if (_cacheCheckedOnce) return;
@@ -708,18 +709,19 @@ namespace SCLOCUA
             long oldSize = older.Sum(d => sizes[d.FullName]);
             long totalSize = sizes.Values.Sum();
 
-            bool hasOldFolders = older.Count > 0;
-            bool latestTooBig = latestSize > LATEST_OK_BYTES;  // current cache grew too much
-            bool anyBigFolder = sizes.Values.Any(sz => sz >= TWO_GB);
+            bool latestTooBig = latestSize > LATEST_OK_BYTES;     // latest cache above 4 GB
+            bool anyBigFolder = sizes.Values.Any(sz => sz >= LARGE_CACHE_THRESHOLD); // any folder >= 5 GB
 
-            // If none of the reasons apply — do nothing
-            if (!hasOldFolders && !latestTooBig && !anyBigFolder) return;
+            // If size thresholds are not crossed — do nothing
+            if (!latestTooBig && !anyBigFolder) return;
+
+            bool hasOldFolders = older.Count > 0;
 
             var answer = MessageBox.Show(
                 $"Знайдено кеш-папок (шейдери): {subdirs.Count} (остання: \"{latest.Name}\" ≈ {FormatBytes(latestSize)}).\n" +
                 (hasOldFolders ? $"Старі папки: {older.Count}, сумарно ≈ {FormatBytes(oldSize)}.\n" : "") +
-                (latestTooBig ? $"Остання тека більша за {FormatBytes(LATEST_OK_BYTES)}\n" : "") +
-                (anyBigFolder ? $"Виявлено теку(и) ≥ {FormatBytes(TWO_GB)}. Загалом: {FormatBytes(totalSize)}.\n" : "") +
+                (latestTooBig ? $"Остання тека більша за {FormatBytes(LATEST_OK_BYTES)}.\n" : "") +
+                (anyBigFolder ? $"Виявлено теку(и) ≥ {FormatBytes(LARGE_CACHE_THRESHOLD)}. Загалом: {FormatBytes(totalSize)}.\n" : "") +
                 "\nТак — видалити СТАРІ (залишити останню)\n" +
                 "Ні — видалити ВСЕ (включно з останньою)\n" +
                 "Скасувати — нічого не робити",

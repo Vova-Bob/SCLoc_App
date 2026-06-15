@@ -8,6 +8,25 @@ namespace SCLOCUA
 {
     static class Program
     {
+        // ===== Перенесення налаштувань між версіями =====
+        private static void UpgradeSettingsIfNeeded()
+        {
+            try
+            {
+                if (Properties.Settings.Default.UpgradeRequired)
+                {
+                    Properties.Settings.Default.Upgrade();
+                    Properties.Settings.Default.UpgradeRequired = false;
+                    Properties.Settings.Default.Save();
+                }
+            }
+            catch (Exception ex)
+            {
+                // Log error but don't crash the app
+                System.Diagnostics.Debug.WriteLine($"Settings upgrade failed: {ex.Message}");
+            }
+        }
+
         // ---- ЄДИНИЙ екземпляр оверлею у всьому додатку ----
         internal static ExecutiveHangarOverlay.HangarOverlayForm Overlay;
         internal static long HangarStartMs = -1;
@@ -61,6 +80,9 @@ namespace SCLOCUA
         [STAThread]
         static void Main()
         {
+            // Перенесення налаштувань з попередньої версії (до завантаження Form1)
+            UpgradeSettingsIfNeeded();
+
             using (var mutex = new Mutex(true, "{EA6A248E-8F44-4C82-92F6-03F6A055E637}", out bool created))
             {
                 if (!created) return;
