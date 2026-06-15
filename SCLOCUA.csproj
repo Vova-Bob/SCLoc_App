@@ -120,6 +120,7 @@
     <Compile Include="AudioPlayer.cs" />
     <Compile Include="GlobalHotkey.cs" />
     <Compile Include="HttpClientService.cs" />
+    <Compile Include="LocalizationProfile.cs" />
     <Compile Include="Form1.cs">
       <SubType>Form</SubType>
     </Compile>

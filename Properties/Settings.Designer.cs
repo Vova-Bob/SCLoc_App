@@ -94,5 +94,17 @@ namespace SCLOCUA.Properties {
                 this["UpgradeRequired"] = value;
             }
         }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("ukrainian")]
+        public string LastSelectedLocalization {
+            get {
+                return ((string)(this["LastSelectedLocalization"]));
+            }
+            set {
+                this["LastSelectedLocalization"] = value;
+            }
+        }
     }
 }

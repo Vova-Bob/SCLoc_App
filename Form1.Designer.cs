@@ -29,6 +29,7 @@
         private void InitializeComponent()
         {
             System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(Form1));
+            this.comboBoxLocalization = new System.Windows.Forms.ComboBox();
             this.label1 = new System.Windows.Forms.Label();
             this.button1 = new System.Windows.Forms.Button();
             this.statusStrip1 = new System.Windows.Forms.StatusStrip();
@@ -53,6 +54,13 @@
             ((System.ComponentModel.ISupportInitialize)(this.pictureBox1)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.pictureBox2)).BeginInit();
             this.SuspendLayout();
+            // 
+            // comboBoxLocalization
+            // 
+            this.comboBoxLocalization.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
+            this.comboBoxLocalization.FormattingEnabled = true;
+            resources.ApplyResources(this.comboBoxLocalization, "comboBoxLocalization");
+            this.comboBoxLocalization.Name = "comboBoxLocalization";
             // 
             // label1
             // 
@@ -223,6 +231,7 @@
             this.Controls.Add(this.button3);
             this.Controls.Add(this.checkBox1);
             this.Controls.Add(this.button2);
+            this.Controls.Add(this.comboBoxLocalization);
             this.Controls.Add(this.statusStrip1);
             this.Controls.Add(this.button1);
             this.Controls.Add(this.label1);
@@ -240,6 +249,7 @@
 
         #endregion
 
+        private System.Windows.Forms.ComboBox comboBoxLocalization;
         private System.Windows.Forms.Label label1;
         private System.Windows.Forms.Button button1;
         private System.Windows.Forms.StatusStrip statusStrip1;

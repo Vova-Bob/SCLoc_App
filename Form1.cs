@@ -17,10 +17,10 @@ namespace SCLOCUA
     {
         private const string UserCfgFileName = "user.cfg";
         private const string GlobalIniFileName = "global.ini";
-        private const string LocalizationPath = @"Data\Localization\korean_(south_korea)";
-        private const string UserCfgContent = "g_language = korean_(south_korea)\r\ng_languageAudio = english\r\n";
         private const string GithubGistUrlPattern = @"https://gist.github.com/\w+/\w+";
         private const string GithubReleasesApiUrl = "https://api.github.com/repos/Vova-Bob/SC_localization_UA/releases";
+
+        private LocalizationProfile _selectedProfile = LocalizationProfile.Ukrainian;
 
         private WikiForm wikiForm = null;                 // secondary form
         private readonly HttpClient httpClient;
@@ -78,7 +78,7 @@ namespace SCLOCUA
             toolTip.SetToolTip(buttonClearCache, "Очистити кеш шейдерів гри Star Citizen");
             toolTip.SetToolTip(buttonWiki, "Відкрити/Закрити SC_Wiki");
             toolTip.SetToolTip(checkBox1, "Файл конфігурації, якщо немає");
-            toolTip.SetToolTip(button1, "LIVE, EPTU, PTU");
+            toolTip.SetToolTip(button1, "LIVE, EPTU, PTU, HOTFIX");
             toolTip.SetToolTip(button2, "Встановити / Оновити файли локалізації");
             toolTip.SetToolTip(button3, "Видалити файли локалізації");
             // Події наведення миші на кота
@@ -91,10 +91,18 @@ namespace SCLOCUA
             toolTip.SetToolTip(buttonAntiAFK, "Увімкнути/Вимкнути Anti-AFK");
             buttonAntiAFK.Click += ButtonAntiAFK_Click;
 
+            InitializeLocalizationSelector();
+
             this.FormClosing += Form1_FormClosing;
 
             InitializeUI();
             InitializeEvents();
+
+            // Default: user.cfg should be created unless it already exists
+            if (!string.IsNullOrWhiteSpace(selectedFolderPath) && !File.Exists(Path.Combine(selectedFolderPath, UserCfgFileName)))
+                checkBox1.Checked = true;
+            else if (string.IsNullOrWhiteSpace(selectedFolderPath))
+                checkBox1.Checked = true;
         }
 
         // === Simple HTTP helpers to normalize timeouts & retries ===
@@ -143,7 +151,7 @@ namespace SCLOCUA
 
         private void InitializeUI()
         {
-            label1.Text = "Виберіть шлях до папки StarCitizen/LIVE або /PTU/EPTU";
+            label1.Text = "Виберіть шлях до папки StarCitizen/LIVE, PTU, EPTU або HOTFIX";
             button2.Text = "Встановити локалізацію";
             button2.Enabled = false;
 
@@ -152,7 +160,7 @@ namespace SCLOCUA
                 UpdateLabel();
                 button2.Enabled = true;
                 bool userCfgExists = File.Exists(Path.Combine(selectedFolderPath, UserCfgFileName));
-                bool globalIniExists = File.Exists(Path.Combine(selectedFolderPath, LocalizationPath, GlobalIniFileName));
+                bool globalIniExists = File.Exists(Path.Combine(selectedFolderPath, _selectedProfile.RelativePath, GlobalIniFileName));
                 button2.Text = userCfgExists || globalIniExists ? "Оновити локалізацію" : "Встановити локалізацію";
             }
         }
@@ -188,6 +196,7 @@ namespace SCLOCUA
 
                     toolStripStatusLabel1.Text = "Перейдіть до встановлення локалізації";
                     button2.Enabled = true;
+                    UpdateButton2Text();
 
                     Properties.Settings.Default.LastSelectedFolderPath = selectedFolderPath;
                     Properties.Settings.Default.Save();
@@ -208,16 +217,16 @@ namespace SCLOCUA
             try
             {
                 await EnsureUserCfgAsync();
-                string githubReleaseUrl = await GetGithubReleaseUrlAsync();
+                string githubReleaseUrl = await GetLocalizationDownloadUrlAsync();
 
                 if (!string.IsNullOrEmpty(githubReleaseUrl))
                 {
-                    string localFilePath = Path.Combine(selectedFolderPath, LocalizationPath, GlobalIniFileName);
+                    string localFilePath = Path.Combine(selectedFolderPath, _selectedProfile.RelativePath, GlobalIniFileName);
                     await DownloadFileAsync(githubReleaseUrl, localFilePath);
                     toolStripProgressBar1.Value++;
                 }
 
-                string gistContent = await ReadFileWithTimeoutAsync(Path.Combine(selectedFolderPath, LocalizationPath, GlobalIniFileName));
+                string gistContent = await ReadFileWithTimeoutAsync(Path.Combine(selectedFolderPath, _selectedProfile.RelativePath, GlobalIniFileName));
                 toolStripStatusLabel1.Text = DetectGithubGistUrl(gistContent) ? "Знайдено URL до Github gist" : "Готово";
             }
             catch (TimeoutException)
@@ -240,18 +249,36 @@ namespace SCLOCUA
 
         private async Task EnsureUserCfgAsync()
         {
-            bool userCfgExists = File.Exists(Path.Combine(selectedFolderPath, UserCfgFileName));
-            if (!userCfgExists && checkBox1.Checked)
-            {
-                string userCfgPath = Path.Combine(selectedFolderPath, UserCfgFileName);
-                await Task.Run(() => File.WriteAllText(userCfgPath, UserCfgContent, new System.Text.UTF8Encoding(false)));
-                toolStripProgressBar1.Value++;
-                checkBox1.Checked = false;
-            }
+            if (!checkBox1.Checked)
+                return;
+
+            string userCfgPath = Path.Combine(selectedFolderPath, UserCfgFileName);
+            string content = $"g_language = {_selectedProfile.LanguageCode}\r\ng_languageAudio = english\r\n";
+            await Task.Run(() => File.WriteAllText(userCfgPath, content, new System.Text.UTF8Encoding(false)));
+            toolStripProgressBar1.Value++;
+            checkBox1.Checked = false;
         }
 
-        private async Task<string> GetGithubReleaseUrlAsync()
+        private async Task RewriteUserCfgForProfileAsync()
         {
+            if (string.IsNullOrWhiteSpace(selectedFolderPath))
+                return;
+
+            string userCfgPath = Path.Combine(selectedFolderPath, UserCfgFileName);
+            if (!File.Exists(userCfgPath))
+                return;
+
+            string content = $"g_language = {_selectedProfile.LanguageCode}\r\ng_languageAudio = english\r\n";
+            await Task.Run(() => File.WriteAllText(userCfgPath, content, new System.Text.UTF8Encoding(false)));
+        }
+
+        private async Task<string> GetLocalizationDownloadUrlAsync()
+        {
+            // Direct URL packs (e.g. MrKraken / StarStrings)
+            if (!string.IsNullOrEmpty(_selectedProfile.DirectUrl))
+                return _selectedProfile.DirectUrl;
+
+            // Ukrainian pack from GitHub releases
             if (selectedFolderPath.Contains("LIVE") || selectedFolderPath.Contains("HOTFIX"))
                 return "https://github.com/Vova-Bob/SC_localization_UA/releases/latest/download/global.ini";
 
@@ -366,7 +393,7 @@ namespace SCLOCUA
             try
             {
                 bool userCfgExists = File.Exists(Path.Combine(selectedFolderPath, UserCfgFileName));
-                bool globalIniExists = File.Exists(Path.Combine(selectedFolderPath, LocalizationPath, GlobalIniFileName));
+                bool globalIniExists = File.Exists(Path.Combine(selectedFolderPath, _selectedProfile.RelativePath, GlobalIniFileName));
 
                 if (userCfgExists || globalIniExists)
                 {
@@ -374,7 +401,7 @@ namespace SCLOCUA
                         await DeleteFileAsync(Path.Combine(selectedFolderPath, UserCfgFileName));
 
                     if (globalIniExists)
-                        await DeleteFileAsync(Path.Combine(selectedFolderPath, LocalizationPath, GlobalIniFileName));
+                        await DeleteFileAsync(Path.Combine(selectedFolderPath, _selectedProfile.RelativePath, GlobalIniFileName));
 
                     toolStripProgressBar1.Value = 0;
                     toolStripStatusLabel1.Text = "Файли видалено";
@@ -393,9 +420,58 @@ namespace SCLOCUA
             }
         }
 
+        private void InitializeLocalizationSelector()
+        {
+            if (comboBoxLocalization == null)
+                return;
+
+            comboBoxLocalization.DropDownStyle = ComboBoxStyle.DropDownList;
+            comboBoxLocalization.FormattingEnabled = true;
+            comboBoxLocalization.Items.Clear();
+
+            foreach (var profile in LocalizationProfile.All)
+                comboBoxLocalization.Items.Add(profile.Name);
+
+            var savedKey = Properties.Settings.Default.LastSelectedLocalization;
+            _selectedProfile = LocalizationProfile.All.FirstOrDefault(p => p.Key == savedKey) ?? LocalizationProfile.Ukrainian;
+            comboBoxLocalization.SelectedItem = _selectedProfile.Name;
+
+            comboBoxLocalization.SelectedIndexChanged += ComboBoxLocalization_SelectedIndexChanged;
+            toolTip.SetToolTip(comboBoxLocalization, "Оберіть локалізацію для встановлення");
+        }
+
+        private async void ComboBoxLocalization_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            var selectedName = comboBoxLocalization.SelectedItem as string;
+            var profile = LocalizationProfile.All.FirstOrDefault(p => p.Name == selectedName);
+            if (profile == null) return;
+
+            _selectedProfile = profile;
+            Properties.Settings.Default.LastSelectedLocalization = profile.Key;
+            Properties.Settings.Default.Save();
+
+            // If user.cfg exists, rewrite it for the newly selected language
+            if (!string.IsNullOrWhiteSpace(selectedFolderPath) && File.Exists(Path.Combine(selectedFolderPath, UserCfgFileName)))
+            {
+                await RewriteUserCfgForProfileAsync();
+            }
+
+            UpdateButton2Text();
+        }
+
         private void UpdateLabel()
         {
             label1.Text = selectedFolderPath;
+        }
+
+        private void UpdateButton2Text()
+        {
+            if (string.IsNullOrWhiteSpace(selectedFolderPath))
+                return;
+
+            bool userCfgExists = File.Exists(Path.Combine(selectedFolderPath, UserCfgFileName));
+            bool globalIniExists = File.Exists(Path.Combine(selectedFolderPath, _selectedProfile.RelativePath, GlobalIniFileName));
+            button2.Text = userCfgExists || globalIniExists ? "Оновити локалізацію" : "Встановити локалізацію";
         }
 
         private void ShowErrorMessage(string message)
@@ -494,6 +570,9 @@ namespace SCLOCUA
             var updatesTask = appUpdater.CheckForUpdatesAsync();
             var releasesTask = CheckForNewReleasesAsync();
             await Task.WhenAll(updatesTask, releasesTask);
+
+            // Після завершення фонових перевірок оновлюємо текст кнопки залежно від вибраного профілю
+            UpdateButton2Text();
 
             // Перевірка кешу при старті (1 раз)
             await OfferCacheCleanupIfLargeAsync();

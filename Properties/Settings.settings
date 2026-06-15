@@ -20,5 +20,8 @@
     <Setting Name="UpgradeRequired" Type="System.Boolean" Scope="User">
       <Value Profile="(Default)">True</Value>
     </Setting>
+    <Setting Name="LastSelectedLocalization" Type="System.String" Scope="User">
+      <Value Profile="(Default)">ukrainian</Value>
+    </Setting>
   </Settings>
 </SettingsFile>
